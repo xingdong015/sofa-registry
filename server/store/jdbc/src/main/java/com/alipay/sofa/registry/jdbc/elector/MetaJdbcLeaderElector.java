@@ -52,6 +52,7 @@ public class MetaJdbcLeaderElector extends AbstractLeaderElector implements Reco
    */
   @Override
   protected LeaderInfo doElect() {
+    //https://cloud.tencent.com/developer/article/1564843 选主leader的方式 竞争选主
     DistributeLockDomain lock =
         distributeLockMapper.queryDistLock(defaultCommonConfig.getClusterId(tableName()), lockName);
 

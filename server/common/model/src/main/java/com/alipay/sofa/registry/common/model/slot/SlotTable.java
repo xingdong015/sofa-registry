@@ -29,6 +29,9 @@ import org.springframework.util.CollectionUtils;
 /**
  * @author yuzhi.lyz
  * @version v 0.1 2020-10-30 10:08 yuzhi.lyz Exp $
+ *
+ * 路由表: SlotTable
+ * 路由节点: Slot
  */
 public final class SlotTable implements Serializable {
   public static final SlotTable INIT = new SlotTable(-1, Collections.emptyList());

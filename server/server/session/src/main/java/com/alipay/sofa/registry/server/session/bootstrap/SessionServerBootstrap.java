@@ -156,16 +156,18 @@ public class SessionServerBootstrap {
 
       initEnvironment();
       ReporterUtils.enablePrometheusDefaultExports();
-
+      // 打开 Session 同步服务，主要用来和 DataServer 数据比对
       openSessionSyncServer();
 
       startupRetryer.call(
           () -> {
+            //连接 MetaServer
             connectMetaServer();
             return true;
           });
 
       // wait until slot table is get
+      //等待心跳检测返回结果更新本地的 SlotTable 数据 MetaServerServiceImpl#handleRenewResult
       startupRetryer.call(
           () -> slotTableCache.getCurrentSlotTable().getEpoch() != SlotTable.INIT.getEpoch());
 
@@ -282,6 +284,7 @@ public class SessionServerBootstrap {
     try {
       if (serverStart.compareAndSet(false, true)) {
         server =
+        //通过exchange 注册多个 bolt rpc服务处理handler来处理 client 的请求
             boltExchange.open(
                 new URL(
                     NetUtil.getLocalAddress().getHostAddress(),
@@ -340,9 +343,11 @@ public class SessionServerBootstrap {
       // register node as renew node
       metaNodeService.renewNode();
       // start sched renew
+      //向MetaServer注册Session服务列表，开始心跳建联
       metaNodeService.startRenewer();
 
       // start fetch system property data
+      //从 MetaServer 获取一些配置属性、例如数据是否压缩、push开关等
       startupRetryer.call(() -> systemPropertyProcessorManager.startFetchMetaSystemProperty());
 
       metaStart.set(true);

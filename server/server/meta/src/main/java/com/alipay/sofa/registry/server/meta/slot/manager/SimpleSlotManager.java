@@ -37,8 +37,10 @@ public class SimpleSlotManager extends AbstractLifecycleObservable implements Sl
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
+
   private volatile SlotTableCacheWrapper localRepo =
       new SlotTableCacheWrapper(SlotTable.INIT, ImmutableMap.of());
+    //这里这个 Repo代表什么意思呢？ TODO
 
   private int slotNums = SlotConfig.SLOT_NUM;
   private int slotReplicas = SlotConfig.SLOT_REPLICAS;

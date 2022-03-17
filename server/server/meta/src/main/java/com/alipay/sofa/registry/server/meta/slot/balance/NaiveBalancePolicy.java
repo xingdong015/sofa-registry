@@ -44,7 +44,7 @@ public class NaiveBalancePolicy implements BalancePolicy {
 
   @Override
   public int getHighWaterMarkSlotLeaderNums(int average) {
-    // round up
+    // round up 向上取整
     return MathUtils.divideCeil(average * (100 + balanceThreshold), 100);
   }
 

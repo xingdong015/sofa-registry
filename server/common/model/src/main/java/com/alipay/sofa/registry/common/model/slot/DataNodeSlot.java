@@ -25,6 +25,9 @@ import java.util.*;
 /**
  * @author yuzhi.lyz
  * @version v 0.1 2020-11-03 11:27 yuzhi.lyz Exp $
+ * 通过 Slot 找 leader和follows
+ * 本质上是通过节点找 Slot，当前节点作为leaders的slot、和以当前节点作为 follower 的节点
+ *
  */
 public final class DataNodeSlot implements Serializable {
   private static final long serialVersionUID = -4418378966762753298L;

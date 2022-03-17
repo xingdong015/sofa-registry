@@ -279,6 +279,8 @@ public class ScheduledSlotArranger extends AbstractLifecycleObservable
     if (metaLeaderService.amIStableAsLeader()) {
       final int minDataNodeNum = metaServerConfig.getDataNodeProtectionNum();
       // the start arrange with the dataNodes snapshot
+
+      //拿到最新的 data 节点、通过心跳更新的节点是追准确的。dataServer 节点会定期 renew 保持和 metaServer 的通讯
       final List<DataNode> dataNodes =
           dataServerManager.getDataServerMetaInfo().getClusterMembers();
       if (dataNodes.isEmpty()) {
