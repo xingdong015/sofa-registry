@@ -55,7 +55,9 @@ public class DefaultSlotAssigner implements SlotAssigner {
   public DefaultSlotAssigner(
       SlotTableBuilder slotTableBuilder, Collection<String> currentDataServers) {
     this.slotTableBuilder = slotTableBuilder;
+    //获取当前 dataServers 的不可变的一致性视图、用来生成 SlotTable 节点
     this.currentDataServers = Collections.unmodifiableSet(Sets.newTreeSet(currentDataServers));
+    //代表没有完成 和 slot 映射的 leader 和 follow 节点信息
     this.migrateSlotGroup = slotTableBuilder.getNoAssignedSlots();
   }
 
@@ -100,6 +102,9 @@ public class DefaultSlotAssigner implements SlotAssigner {
      * these nodes first) leaders with no follower is lowest priority, as whatever we did, it will
      * pick up a candidate that is not its follower
      */
+    //按照 follows 节点的数量 从大到小排序 0 比较特殊排在最后面 也就是说优先安排 follow节点比较少的 Slot
+    //其实这点也可以想明白的。这些没有 leader 的 slot 分配顺序肯定是要根据 follow节点越少的优先分配最好
+    //以防止这个 follow 也挂了、那么数据就有可能会丢失了。
     List<Integer> leaders =
         migrateSlotGroup.getLeadersByScore(new FewerFollowerFirstStrategy(slotTableBuilder));
     if (leaders.isEmpty()) {
@@ -111,6 +116,7 @@ public class DefaultSlotAssigner implements SlotAssigner {
       String nextLeader =
           Selectors.slotLeaderSelector(highWatermark, slotTableBuilder, slotId)
               .select(currentDataNodes);
+      //将follow节点提升为主节点的。
       boolean nextLeaderWasFollower = isNextLeaderFollowerOfSlot(slotId, nextLeader);
       logger.info(
           "[assignLeaderSlots]assign slot[{}] leader as [{}], upgrade={}, dataServers={}",
@@ -121,6 +127,7 @@ public class DefaultSlotAssigner implements SlotAssigner {
       slotTableBuilder.replaceLeader(slotId, nextLeader);
       Metrics.SlotAssign.onSlotLeaderAssign(nextLeader, slotId);
       if (nextLeaderWasFollower) {
+        //因为当前 Slot 将 follow节点提升为leader节点了、那么该 Slot 肯定 follows 个数又不够了、需要再次分配 follow 节点
         migrateSlotGroup.addFollower(slotId);
       }
     }
@@ -132,6 +139,7 @@ public class DefaultSlotAssigner implements SlotAssigner {
   }
 
   private boolean assignFollowerSlots() {
+    //根据 当前 Slot 缺少越多的 follow 越优先分配 follow
     List<MigrateSlotGroup.FollowerToAssign> followerToAssigns =
         migrateSlotGroup.getFollowersByScore(new FollowerEmergentScoreJury());
     if (followerToAssigns.isEmpty()) {
@@ -143,10 +151,13 @@ public class DefaultSlotAssigner implements SlotAssigner {
       final int slotId = followerToAssign.getSlotId();
       for (int i = 0; i < followerToAssign.getAssigneeNums(); i++) {
         List<String> candidates = Lists.newArrayList(currentDataServers);
+        //通过 SlotTableBuilder 的 reverseMap 找到节点最少作为 follow 节点的， follows 个数一样、按照最少作为 leader 节点进行排序
+        //其实最终目的就是找到最 "闲" 的那一台机器
         candidates.sort(Comparators.leastFollowersFirst(slotTableBuilder));
         boolean assigned = false;
         for (String candidate : candidates) {
           DataNodeSlot dataNodeSlot = slotTableBuilder.getDataNodeSlot(candidate);
+          //跳过已经是它的 follow 或者 leader 节点的Node节点
           if (dataNodeSlot.containsFollower(slotId) || dataNodeSlot.containsLeader(slotId)) {
             continue;
           }

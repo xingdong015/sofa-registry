@@ -38,6 +38,9 @@ import org.apache.commons.lang.StringUtils;
 /**
  * @author chen.zhu
  *     <p>Jan 28, 2021
+ *
+ *
+ *     sletTable 统计信息、在心跳中更新。checkSlotStatuses 的触发来源为 onHeartBeat
  */
 public class DefaultSlotTableStats extends AbstractLifecycle implements SlotTableStats {
 
@@ -84,6 +87,7 @@ public class DefaultSlotTableStats extends AbstractLifecycle implements SlotTabl
         String leader = slot.getLeader();
         SlotStats slotStats = slotStatses.get(slotId);
         if (StringUtils.isBlank(leader)
+                //slotManager 中 leader 和 slotStats 中 leader 是否一致
             || !slotStats.getSlot().getLeader().equals(leader)
             || !slotStatses.get(slotId).isLeaderStable()) {
           logger.warn("[isSlotLeadersStable]slot[{}] leader[{}] not stable", slotId, leader);

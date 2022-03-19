@@ -99,7 +99,7 @@ public class DefaultSlotBalancer implements SlotBalancer {
   }
 
   private boolean balanceLeaderSlots() {
-    // ceil avg, find the high water mark
+    // ceil avg, find the high water mark   假如有 32 个节点、那么 leaderCeilAvg = 256 / 32 = 8
     final int leaderCeilAvg = MathUtils.divideCeil(slotNum, currentDataServers.size());
     if (upgradeHighLeaders(leaderCeilAvg)) {
       return true;
@@ -113,8 +113,8 @@ public class DefaultSlotBalancer implements SlotBalancer {
   private boolean upgradeHighLeaders(int ceilAvg) {
     // smoothly, find the dataNode which owners the target slot's follower
     // and upgrade the follower to leader
-    final int maxMove = balancePolicy.getMaxMoveLeaderSlots();
-    final int threshold = balancePolicy.getHighWaterMarkSlotLeaderNums(ceilAvg);
+    final int maxMove = balancePolicy.getMaxMoveLeaderSlots(); //默认是 6
+    final int threshold = balancePolicy.getHighWaterMarkSlotLeaderNums(ceilAvg); //向上取整
     int balanced = 0;
     Set<String> notSatisfies = Sets.newHashSet();
 
@@ -122,6 +122,7 @@ public class DefaultSlotBalancer implements SlotBalancer {
       int last = balanced;
       // 1. find the dataNode which has leaders more than high water mark
       //    and sorted by leaders.num desc
+      //找到 这些节点中、那些节点作为 leaders 超过 threshold、并且按照超过的从大到小排列。
       final List<String> highDataServers = findDataServersLeaderHighWaterMark(threshold);
       if (highDataServers.isEmpty()) {
         break;

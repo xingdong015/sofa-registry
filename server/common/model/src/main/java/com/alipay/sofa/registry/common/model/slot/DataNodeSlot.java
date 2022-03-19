@@ -28,6 +28,9 @@ import java.util.*;
  * 通过 Slot 找 leader和follows
  * 本质上是通过节点找 Slot，当前节点作为leaders的slot、和以当前节点作为 follower 的节点
  *
+ * 也就是说 当前我这个节点、我在那些 slot 中作为 leader 对应的是 Set<Integer> leaders
+ * 以及我当前这个节点在哪些 slot 中作为 follow 、对应存储在 Set<Integer> follows
+ *
  */
 public final class DataNodeSlot implements Serializable {
   private static final long serialVersionUID = -4418378966762753298L;

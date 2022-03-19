@@ -38,6 +38,7 @@ public class SimpleSlotManager extends AbstractLifecycleObservable implements Sl
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
 
+  //这个是最终本地路由表存储的位置。
   private volatile SlotTableCacheWrapper localRepo =
       new SlotTableCacheWrapper(SlotTable.INIT, ImmutableMap.of());
     //这里这个 Repo代表什么意思呢？ TODO

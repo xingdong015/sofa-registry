@@ -142,6 +142,7 @@ public class ScheduledSlotArranger extends AbstractLifecycleObservable
 
   private SlotTableBuilder createSlotTableBuilder(
       SlotTable slotTable, List<String> currentDataNodeIps, int slotNum, int replicas) {
+    //通过 NodeComparator 包装当前新增的、删除的、
     NodeComparator comparator = new NodeComparator(slotTable.getDataServers(), currentDataNodeIps);
     SlotTableBuilder slotTableBuilder = new SlotTableBuilder(slotTable, slotNum, replicas);
     slotTableBuilder.init(currentDataNodeIps);
@@ -244,6 +245,7 @@ public class ScheduledSlotArranger extends AbstractLifecycleObservable
           "[tryArrangeSlots][begin]arrange slot with DataNode, size={}, {}",
           currentDataNodeIps.size(),
           currentDataNodeIps);
+      //拿到当前的路由表
       final SlotTable curSlotTable = slotManager.getSlotTable();
       SlotTableBuilder tableBuilder =
           createSlotTableBuilder(
@@ -251,7 +253,7 @@ public class ScheduledSlotArranger extends AbstractLifecycleObservable
               currentDataNodeIps,
               slotManager.getSlotNums(),
               slotManager.getSlotReplicaNums());
-
+      //是否 有没有完成分配的 Slot 槽位 (没有 leader 或者 follow的个数不够)
       noAssign = tableBuilder.hasNoAssignedSlots();
       if (noAssign) {
         logger.info("[re-assign][begin] assign slots to data-server");

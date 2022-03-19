@@ -30,9 +30,10 @@ import org.glassfish.jersey.internal.guava.Sets;
  */
 public class MigrateSlotGroup {
 
-  /** slotId */
+  /** slotId */  //那些 Slot 缺少 leader
   private final Set<Integer> leaders = Sets.newHashSet();
   /** key: slotId, value: counter (one slot could has multi followers to migrate) */
+  //那些槽位 缺少 follow 以及缺少的个数
   private final Map<Integer, Integer> lackFollowers = Maps.newHashMap();
 
   /**

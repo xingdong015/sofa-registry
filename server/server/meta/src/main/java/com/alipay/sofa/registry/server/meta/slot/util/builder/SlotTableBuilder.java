@@ -40,7 +40,7 @@ import org.apache.commons.lang.StringUtils;
 public class SlotTableBuilder implements Builder<SlotTable> {
 
   private static final Logger logger = LoggerFactory.getLogger(SlotTableBuilder.class);
-
+  //正在创建的 Slot, 属性还没有创建完成
   private final Map<Integer, SlotBuilder> buildingSlots = Maps.newHashMapWithExpectedSize(256);
 
   private final Map<String, DataNodeSlot> reverseMap = Maps.newHashMap();
@@ -70,6 +70,7 @@ public class SlotTableBuilder implements Builder<SlotTable> {
         getOrCreate(slotId);
         continue;
       }
+      //重新新建一个 SlotBuilder 将原来的 Slot 里面的数据拷贝过来
       SlotBuilder slotBuilder =
           new SlotBuilder(slotId, followerNums, slot.getLeader(), slot.getLeaderEpoch());
       if (!slotBuilder.addFollower(initSlotTable.getSlot(slotId).getFollowers())) {
@@ -80,6 +81,7 @@ public class SlotTableBuilder implements Builder<SlotTable> {
     initReverseMap(dataServers);
   }
 
+  //实例化反向路由表、反向查找表、从Node节点到Slot的查找功能
   private void initReverseMap(List<String> dataServers) {
     for (int slotId = 0; slotId < slotNums; slotId++) {
       SlotBuilder slotBuilder = getOrCreate(slotId);
@@ -103,7 +105,9 @@ public class SlotTableBuilder implements Builder<SlotTable> {
   public String replaceLeader(int slotId, String nextLeader) {
     SlotBuilder slotBuilder = getOrCreate(slotId);
     String prevLeader = slotBuilder.getLeader();
+    //将当前节点提升为 leader 节点的时候同时要把它从 follow 节点中删除
     slotBuilder.setLeader(nextLeader).removeFollower(nextLeader);
+    //更新倒排
     DataNodeSlot nextLeaderDataNodeSlot =
         reverseMap.computeIfAbsent(nextLeader, k -> new DataNodeSlot(nextLeader));
     nextLeaderDataNodeSlot.addLeader(slotId);

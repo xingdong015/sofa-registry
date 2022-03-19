@@ -91,10 +91,14 @@ public class Selectors {
 
     @Override
     public String select(Collection<String> candidates) {
+      //candidates: 当前所有的候选节点
       Set<String> currentFollowers = slotTableBuilder.getOrCreate(slotId).getFollowers();
       Collection<String> followerCandidates = Lists.newArrayList(candidates);
       followerCandidates.retainAll(currentFollowers);
       // first, try to select the candidate which is the follower
+      //经过 followerCandidates.retainAll(currentFollowers)) 之后 followerCandidates 仅仅保留 当前 Slot 的有效follow Node节点
+      //兵器采取了一个策略是 当前 follow 节点作为其他 Slot 的leader最少的优先、其实也可以很明确的想到、当前 follower 越是没有被当做其他 Slot 的leader节点、那么
+      //证明他就是越闲的。必然优先把他弄成leader节点
       String leader = new LeastLeaderFirstSelector(slotTableBuilder).select(followerCandidates);
       if (leader != null) {
         // check the num of leaders
@@ -104,6 +108,7 @@ public class Selectors {
         }
       }
       // second, find other candidate
+      //从其他的机器中选择一个
       return new LeastLeaderFirstSelector(slotTableBuilder).select(candidates);
     }
   }
