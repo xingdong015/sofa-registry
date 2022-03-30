@@ -147,6 +147,8 @@ public class ScheduledSlotArranger extends AbstractLifecycleObservable
     SlotTableBuilder slotTableBuilder = new SlotTableBuilder(slotTable, slotNum, replicas);
     slotTableBuilder.init(currentDataNodeIps);
 
+    //在这里将已经下线的 data 节点删除掉、其中已经删除的 是在 NodeComparator 内部的getDiff方法通过 比较当前 slotTable 中的
+    //dataServer 和 currentDataServer (通过心跳获取的) 得到的
     comparator.getRemoved().forEach(slotTableBuilder::removeDataServerSlots);
     return slotTableBuilder;
   }

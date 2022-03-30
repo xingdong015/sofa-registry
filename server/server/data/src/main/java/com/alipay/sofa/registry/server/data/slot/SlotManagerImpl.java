@@ -96,6 +96,9 @@ public final class SlotManagerImpl implements SlotManager {
   /**
    * the sync and migrating may happen parallelly when slot role has modified. make sure the datum
    * merging is idempotent
+   *
+   * 这里是 follow节点同步leader节点数据
+   * 以及leader节点和session节点数据同步入口
    */
   private final SyncingWatchDog watchDog = new SyncingWatchDog();
 

@@ -102,7 +102,10 @@ public class DefaultSlotAssigner implements SlotAssigner {
      * these nodes first) leaders with no follower is lowest priority, as whatever we did, it will
      * pick up a candidate that is not its follower
      */
-    //按照 follows 节点的数量 从大到小排序 0 比较特殊排在最后面 也就是说优先安排 follow节点比较少的 Slot
+    //按照 follows 节点的数量 从大到小排序 0 比较特殊排在最后面,0 为什么比较特殊呢、因为无论怎么分配、
+    // 最终选择出来的leader一定不是该slot的follow、因为该slot的follow为空
+
+    // 也就是说优先安排 follow节点比较少的 Slot
     //其实这点也可以想明白的。这些没有 leader 的 slot 分配顺序肯定是要根据 follow节点越少的优先分配最好
     //以防止这个 follow 也挂了、那么数据就有可能会丢失了。
     List<Integer> leaders =

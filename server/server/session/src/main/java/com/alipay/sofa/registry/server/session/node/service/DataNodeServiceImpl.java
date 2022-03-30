@@ -435,6 +435,7 @@ public class DataNodeServiceImpl implements DataNodeService {
 
             @Override
             public URL getRequestUrl() {
+              //通过 slot 路由表找到对应的 leader data节点
               return getUrl(slot);
             }
           });
