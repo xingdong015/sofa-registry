@@ -19,6 +19,7 @@
         <module>api</module>
         <module>bolt</module>
         <module>http</module>
+        <module>grpc</module>
     </modules>
 
     <artifactId>registry-remoting</artifactId>

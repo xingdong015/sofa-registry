@@ -22,6 +22,7 @@ import com.alipay.sofa.registry.jraft.config.RaftConfiguration;
 import com.alipay.sofa.registry.remoting.bolt.exchange.BoltExchange;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.NodeExchanger;
+import com.alipay.sofa.registry.remoting.grpc.exchange.GrpcExchange;
 import com.alipay.sofa.registry.remoting.jersey.exchange.JerseyExchange;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataAcceptor;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataAcceptorImpl;
@@ -51,6 +52,8 @@ import com.alipay.sofa.registry.server.session.remoting.DataNodeExchanger;
 import com.alipay.sofa.registry.server.session.remoting.DataNodeNotifyExchanger;
 import com.alipay.sofa.registry.server.session.remoting.console.SessionConsoleExchanger;
 import com.alipay.sofa.registry.server.session.remoting.console.handler.*;
+import com.alipay.sofa.registry.server.session.remoting.grpc.BiPublisherRegisterAccepter;
+import com.alipay.sofa.registry.server.session.remoting.grpc.PublisherRegisterAccepter;
 import com.alipay.sofa.registry.server.session.remoting.handler.*;
 import com.alipay.sofa.registry.server.session.resource.*;
 import com.alipay.sofa.registry.server.session.scheduler.timertask.CacheCountTask;
@@ -86,6 +89,8 @@ import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import io.grpc.BindableService;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -345,6 +350,19 @@ public class SessionServerConfiguration {
       list.add(dataChangeRequestHandler());
       list.add(dataPushRequestHandler());
       return list;
+    }
+    @Bean(name = "serverDefinitions")
+    public Collection<BindableService> serverDefinitions() {
+      Collection<BindableService> list = new ArrayList<>();
+      list.add(new PublisherRegisterAccepter());
+      list.add(new BiPublisherRegisterAccepter());
+      return list;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "grpcExchange")
+    public Exchange grpcExchange() {
+      return new GrpcExchange();
     }
 
     @Bean(name = "metaClientHandlers")

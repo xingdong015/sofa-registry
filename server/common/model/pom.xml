@@ -14,6 +14,8 @@
 
     <properties>
         <main.user.dir>../../../</main.user.dir>
+        <grpc.version>1.50.2</grpc.version><!-- CURRENT_GRPC_VERSION -->
+        <protoc.version>3.21.9</protoc.version>
     </properties>
 
     <dependencies>
@@ -44,4 +46,35 @@
             <artifactId>protobuf-java</artifactId>
         </dependency>
     </dependencies>
+<!--    <build>-->
+<!--        <extensions>-->
+<!--            <extension>-->
+<!--                <groupId>kr.motd.maven</groupId>-->
+<!--                <artifactId>os-maven-plugin</artifactId>-->
+<!--                <version>1.6.2</version>-->
+<!--            </extension>-->
+<!--        </extensions>-->
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>org.xolstice.maven.plugins</groupId>-->
+<!--                <artifactId>protobuf-maven-plugin</artifactId>-->
+<!--                <version>0.6.1</version>-->
+<!--                <configuration>-->
+<!--                    <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>-->
+<!--                    <pluginId>grpc-java</pluginId>-->
+<!--                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>-->
+<!--                    <protoSourceRoot>${basedir}/src/main/resources/proto</protoSourceRoot>-->
+<!--                    &lt;!&ndash;                    <outputDirectory>${basedir}/src/main/resources/source/</outputDirectory>&ndash;&gt;-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>compile</goal>-->
+<!--                            <goal>compile-custom</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+<!--        </plugins>-->
+<!--    </build>-->
 </project>

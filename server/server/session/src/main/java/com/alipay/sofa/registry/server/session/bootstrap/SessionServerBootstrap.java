@@ -56,6 +56,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Resource;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
+
+import io.grpc.BindableService;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -76,10 +78,15 @@ public class SessionServerBootstrap {
 
   @Autowired private Exchange jerseyExchange;
 
+  @Autowired private Exchange grpcExchange;
+
   @Autowired private ExecutorManager executorManager;
 
   @Resource(name = "serverHandlers")
   private Collection<AbstractServerHandler> serverHandlers;
+
+  @Resource(name = "serverDefinitions")
+  private Collection<BindableService> serverDefinitions;
 
   @Autowired protected MetaServerService metaNodeService;
   @Autowired private NodeExchanger dataNodeExchanger;
@@ -191,6 +198,7 @@ public class SessionServerBootstrap {
       registerSerializer();
       openConsoleServer();
       openSessionServer();
+      openGrpcSessionServer();
 
       TaskMetrics.getInstance().registerBolt();
 
@@ -277,7 +285,24 @@ public class SessionServerBootstrap {
       throw new RuntimeException("Console server start error!", e);
     }
   }
-
+  private void openGrpcSessionServer() {
+    try {
+      if (serverStart.compareAndSet(false, true)) {
+        server = grpcExchange.open(new
+                        URL(NetUtil.getLocalAddress().getHostAddress(),
+                        sessionServerConfig.getServerPort()),
+                sessionServerConfig.getClientIOLowWaterMark(),
+                sessionServerConfig.getClientIOHighWaterMark(),
+                serverDefinitions);
+        LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort());
+      }
+    } catch (Exception e) {
+      serverStart.set(false);
+      LOGGER.error(
+              "Session grpc server start error! port:{}", sessionServerConfig.getServerPort(), e);
+      throw new RuntimeException("Session grpc server start error!", e);
+    }
+  }
   private void openSessionServer() {
     try {
       if (serverStart.compareAndSet(false, true)) {
