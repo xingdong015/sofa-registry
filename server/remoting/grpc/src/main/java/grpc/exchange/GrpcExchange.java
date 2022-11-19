@@ -72,7 +72,7 @@ public class GrpcExchange implements Exchange<BindableService> {
 
   @Override
   public Server open(URL url, int lowWaterMark, int highWaterMark, BindableService... definitions) {
-    return open(url, definitions);
+    return null;
   }
 
   @Override

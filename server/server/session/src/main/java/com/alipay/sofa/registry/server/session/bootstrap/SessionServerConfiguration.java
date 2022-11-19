@@ -83,14 +83,13 @@ import com.alipay.sofa.registry.store.api.config.StoreApiConfiguration;
 import com.alipay.sofa.registry.task.MetricsableThreadPoolExecutor;
 import com.alipay.sofa.registry.util.NamedThreadFactory;
 import com.alipay.sofa.registry.util.PropertySplitter;
+import grpc.exchange.GrpcExchange;
+import io.grpc.BindableService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import grpc.exchange.GrpcExchange;
-import io.grpc.BindableService;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -351,6 +350,7 @@ public class SessionServerConfiguration {
       list.add(dataPushRequestHandler());
       return list;
     }
+
     @Bean(name = "serverDefinitions")
     public Collection<BindableService> serverDefinitions() {
       Collection<BindableService> list = new ArrayList<>();
