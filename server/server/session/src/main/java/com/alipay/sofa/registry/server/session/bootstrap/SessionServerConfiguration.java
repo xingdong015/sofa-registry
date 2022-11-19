@@ -22,7 +22,6 @@ import com.alipay.sofa.registry.jraft.config.RaftConfiguration;
 import com.alipay.sofa.registry.remoting.bolt.exchange.BoltExchange;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.NodeExchanger;
-import com.alipay.sofa.registry.remoting.grpc.exchange.GrpcExchange;
 import com.alipay.sofa.registry.remoting.jersey.exchange.JerseyExchange;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataAcceptor;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataAcceptorImpl;
@@ -90,6 +89,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import grpc.exchange.GrpcExchange;
 import io.grpc.BindableService;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;

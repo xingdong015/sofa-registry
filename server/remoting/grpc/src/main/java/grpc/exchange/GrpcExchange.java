@@ -24,7 +24,6 @@ import grpc.GrpcServer;
 import io.grpc.BindableService;
 import io.grpc.ServerCall;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
-
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -72,8 +71,7 @@ public class GrpcExchange implements Exchange<BindableService> {
   }
 
   @Override
-  public Server open(
-      URL url, int lowWaterMark, int highWaterMark, BindableService... definitions) {
+  public Server open(URL url, int lowWaterMark, int highWaterMark, BindableService... definitions) {
     return open(url, definitions);
   }
 
