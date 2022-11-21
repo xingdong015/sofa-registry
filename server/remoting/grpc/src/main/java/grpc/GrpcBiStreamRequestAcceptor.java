@@ -30,82 +30,82 @@ import io.grpc.stub.StreamObserver;
  */
 public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestStreamImplBase {
 
-  private final RequestHandlerRegistry requestHandlerRegistry;
+    private final RequestHandlerRegistry requestHandlerRegistry;
 
-  private final ConnectionManager connectionManager;
+    private final ConnectionManager connectionManager;
 
-  public GrpcBiStreamRequestAcceptor(
-      RequestHandlerRegistry requestHandlerRegistry, ConnectionManager connectionManager) {
-    this.requestHandlerRegistry = requestHandlerRegistry;
-    this.connectionManager = connectionManager;
-  }
+    public GrpcBiStreamRequestAcceptor(
+            RequestHandlerRegistry requestHandlerRegistry, ConnectionManager connectionManager) {
+        this.requestHandlerRegistry = requestHandlerRegistry;
+        this.connectionManager      = connectionManager;
+    }
 
-  @Override
-  public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
+    @Override
+    public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
 
-    return new StreamObserver<Payload>() {
+        return new StreamObserver<Payload>() {
 
-      final String connectionId = CONTEXT_KEY_CONN_ID.get();
+            final String connectionId = CONTEXT_KEY_CONN_ID.get();
 
-      final Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
+            final Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
 
-      final int remotePort = CONTEXT_KEY_CONN_REMOTE_PORT.get();
+            final int remotePort = CONTEXT_KEY_CONN_REMOTE_PORT.get();
 
-      String remoteIp = CONTEXT_KEY_CONN_REMOTE_IP.get();
+            String remoteIp = CONTEXT_KEY_CONN_REMOTE_IP.get();
 
-      String clientIp = "";
+            String clientIp = "";
 
-      @Override
-      public void onNext(Payload payload) {
-        clientIp = payload.getMetadata().getClientIp();
-        Object parseObj;
-        try {
-          parseObj = GrpcUtils.parse(payload);
-        } catch (Throwable throwable) {
-          throwable.printStackTrace();
-          return;
-        }
-        if (parseObj instanceof ConnectionSetupRequest) {
-          ConnectionSetupRequest setUpRequest = (ConnectionSetupRequest) parseObj;
+            @Override
+            public void onNext(Payload payload) {
+                clientIp = payload.getMetadata().getClientIp();
+                Object parseObj;
+                try {
+                    parseObj = GrpcUtils.parse(payload);
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace();
+                    return;
+                }
+                if (parseObj instanceof ConnectionSetupRequest) {
+                    ConnectionSetupRequest setUpRequest = (ConnectionSetupRequest) parseObj;
 
-          Connection connection =
-              new GrpcConnection(
-                  connectionId,
-                  payload.getMetadata().getClientIp(),
-                  localPort,
-                  remoteIp,
-                  remotePort,
-                  setUpRequest.getClientVersion(),
-                  setUpRequest.getAttributes(),
-                  responseObserver,
-                  CONTEXT_KEY_CHANNEL.get());
+                    Connection connection = new GrpcConnection(
+                            connectionId,
+                            payload.getMetadata().getClientIp(),
+                            localPort,
+                            remoteIp,
+                            remotePort,
+                            setUpRequest.getClientVersion(),
+                            setUpRequest.getAttributes(),
+                            responseObserver,
+                            CONTEXT_KEY_CHANNEL.get());
 
-          if (!connectionManager.register(connectionId, connection)) {
-            System.out.println("注册异常。。。。。。。。。。");
-          }
-        }
-      }
-
-      @Override
-      public void onError(Throwable t) {}
-
-      @Override
-      public void onCompleted() {
-        if (responseObserver instanceof ServerCallStreamObserver) {
-          ServerCallStreamObserver serverCallStreamObserver =
-              ((ServerCallStreamObserver) responseObserver);
-          if (serverCallStreamObserver.isCancelled()) {
-            // client close the stream.
-          } else {
-            try {
-              // 结束服务器端的调用
-              serverCallStreamObserver.onCompleted();
-            } catch (Throwable throwable) {
-              // ignore
+                    if (!connectionManager.register(connectionId, connection)) {
+                        System.out.println("注册异常。。。。。。。。。。");
+                    }
+                }
             }
-          }
-        }
-      }
-    };
-  }
+
+            @Override
+            public void onError(Throwable t) {
+            }
+
+            @Override
+            public void onCompleted() {
+                if (responseObserver instanceof ServerCallStreamObserver) {
+                    ServerCallStreamObserver serverCallStreamObserver =
+                            ((ServerCallStreamObserver) responseObserver);
+                    if (serverCallStreamObserver.isCancelled()) {
+                        // client close the stream.
+                    } else {
+                        try {
+                            // 结束服务器端的调用
+                            serverCallStreamObserver.onCompleted();
+                        } catch (Throwable throwable) {
+                            // ignore
+                        }
+                    }
+                }
+            }
+        };
+    }
 }

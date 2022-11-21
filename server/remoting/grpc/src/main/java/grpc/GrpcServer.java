@@ -225,10 +225,12 @@ public class GrpcServer implements Server {
     }
 
     private void initHandlerRegistry() {
-        for (ChannelHandler handler : handlers) {
-            Class<?> clazz  = handler.getClass();
-            Class    tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
-            requestHandlerRegistry.registryHandler(tClass.getSimpleName(), handler);
+        for (ChannelHandler channelHandler : handlers) {
+            if (ChannelHandler.HandlerType.PROCESSER.equals(channelHandler.getType())) {
+                Class<?> clazz  = channelHandler.getClass();
+                Class    tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+                requestHandlerRegistry.registryHandler(tClass.getSimpleName(), channelHandler);
+            }
         }
     }
 

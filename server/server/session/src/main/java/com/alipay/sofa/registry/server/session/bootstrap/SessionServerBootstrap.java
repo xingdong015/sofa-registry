@@ -47,6 +47,7 @@ import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
+
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Date;
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Resource;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
+
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -68,465 +70,483 @@ import org.springframework.context.ApplicationContext;
  */
 public class SessionServerBootstrap {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SessionServerBootstrap.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionServerBootstrap.class);
 
-  @Autowired private SessionServerConfig sessionServerConfig;
+    @Autowired
+    private SessionServerConfig sessionServerConfig;
 
-  @Autowired private Exchange boltExchange;
+    @Autowired
+    private Exchange boltExchange;
 
-  @Autowired private Exchange jerseyExchange;
+    @Autowired
+    private Exchange jerseyExchange;
 
-  @Autowired private Exchange grpcExchange;
+    @Autowired
+    private Exchange grpcExchange;
 
-  @Autowired private ExecutorManager executorManager;
+    @Autowired
+    private ExecutorManager executorManager;
 
-  @Resource(name = "serverHandlers")
-  private Collection<AbstractServerHandler> serverHandlers;
+    @Resource(name = "serverHandlers")
+    private Collection<AbstractServerHandler> serverHandlers;
 
-  @Autowired protected MetaServerService metaNodeService;
-  @Autowired private NodeExchanger dataNodeExchanger;
-  @Autowired private NodeExchanger dataNodeNotifyExchanger;
+    @Autowired
+    protected MetaServerService metaNodeService;
+    @Autowired
+    private   NodeExchanger     dataNodeExchanger;
+    @Autowired
+    private   NodeExchanger     dataNodeNotifyExchanger;
 
-  @Autowired private ResourceConfig jerseyResourceConfig;
+    @Autowired
+    private ResourceConfig jerseyResourceConfig;
 
-  @Autowired private ApplicationContext applicationContext;
+    @Autowired
+    private ApplicationContext applicationContext;
 
-  @Autowired private SystemPropertyProcessorManager systemPropertyProcessorManager;
+    @Autowired
+    private SystemPropertyProcessorManager systemPropertyProcessorManager;
 
-  @Autowired private SlotTableCache slotTableCache;
+    @Autowired
+    private SlotTableCache slotTableCache;
 
-  @Autowired private ConfigProvideDataWatcher configProvideDataWatcher;
+    @Autowired
+    private ConfigProvideDataWatcher configProvideDataWatcher;
 
-  @Autowired private SessionRegistryStrategy sessionRegistryStrategy;
+    @Autowired
+    private SessionRegistryStrategy sessionRegistryStrategy;
 
-  @Autowired private ClientManagerAddressRepository clientManagerAddressRepository;
+    @Autowired
+    private ClientManagerAddressRepository clientManagerAddressRepository;
 
-  @Autowired private RecoverConfigRepository recoverConfigRepository;
-  private Server server;
+    @Autowired
+    private RecoverConfigRepository recoverConfigRepository;
+    private Server                  server;
 
-  private Server dataSyncServer;
+    private Server dataSyncServer;
 
-  @Resource(name = "sessionSyncHandlers")
-  private Collection<AbstractServerHandler> sessionSyncHandlers;
+    @Resource(name = "sessionSyncHandlers")
+    private Collection<AbstractServerHandler> sessionSyncHandlers;
 
-  private Server consoleServer;
+    private Server consoleServer;
 
-  @Resource(name = "consoleHandlers")
-  private Collection<AbstractServerHandler> consoleHandlers;
+    @Resource(name = "consoleHandlers")
+    private Collection<AbstractServerHandler> consoleHandlers;
 
-  @Autowired private MetadataCacheRegistry metadataCacheRegistry;
+    @Autowired
+    private MetadataCacheRegistry metadataCacheRegistry;
 
-  @Resource private ClientNodeConnectionHandler clientNodeConnectionHandler;
+    @Resource
+    private ClientNodeConnectionHandler clientNodeConnectionHandler;
 
-  private Server httpServer;
+    private Server httpServer;
 
-  private final AtomicBoolean metaStart = new AtomicBoolean(false);
+    private final AtomicBoolean metaStart = new AtomicBoolean(false);
 
-  private final AtomicBoolean schedulerStart = new AtomicBoolean(false);
+    private final AtomicBoolean schedulerStart = new AtomicBoolean(false);
 
-  private final AtomicBoolean httpStart = new AtomicBoolean(false);
+    private final AtomicBoolean httpStart = new AtomicBoolean(false);
 
-  private final AtomicBoolean consoleStart = new AtomicBoolean(false);
+    private final AtomicBoolean consoleStart = new AtomicBoolean(false);
 
-  private final AtomicBoolean serverStart = new AtomicBoolean(false);
+    private final AtomicBoolean serverStart = new AtomicBoolean(false);
 
-  private final AtomicBoolean dataStart = new AtomicBoolean(false);
+    private final AtomicBoolean dataStart = new AtomicBoolean(false);
 
-  private final AtomicBoolean serverForSessionSyncStart = new AtomicBoolean(false);
+    private final AtomicBoolean serverForSessionSyncStart = new AtomicBoolean(false);
 
-  private final Retryer<Boolean> startupRetryer =
-      RetryerBuilder.<Boolean>newBuilder()
-          .retryIfRuntimeException()
-          .retryIfResult(input -> !input)
-          .withWaitStrategy(WaitStrategies.exponentialWait(1000, 3000, TimeUnit.MILLISECONDS))
-          .withStopStrategy(StopStrategies.stopAfterAttempt(10))
-          .build();
+    private final Retryer<Boolean> startupRetryer =
+            RetryerBuilder.<Boolean>newBuilder()
+                    .retryIfRuntimeException()
+                    .retryIfResult(input -> !input)
+                    .withWaitStrategy(WaitStrategies.exponentialWait(1000, 3000, TimeUnit.MILLISECONDS))
+                    .withStopStrategy(StopStrategies.stopAfterAttempt(10))
+                    .build();
 
-  private final Retryer<Boolean> addBlacklistRetryer =
-      RetryerBuilder.<Boolean>newBuilder()
-          .retryIfException()
-          .retryIfRuntimeException()
-          .withWaitStrategy(WaitStrategies.exponentialWait(1000, 3000, TimeUnit.MILLISECONDS))
-          .withStopStrategy(StopStrategies.stopAfterAttempt(3))
-          .build();
+    private final Retryer<Boolean> addBlacklistRetryer =
+            RetryerBuilder.<Boolean>newBuilder()
+                    .retryIfException()
+                    .retryIfRuntimeException()
+                    .withWaitStrategy(WaitStrategies.exponentialWait(1000, 3000, TimeUnit.MILLISECONDS))
+                    .withStopStrategy(StopStrategies.stopAfterAttempt(3))
+                    .build();
 
-  /** Do initialized. */
-  public void start() {
-    try {
-      LOGGER.info("release properties: {}", ServerEnv.getReleaseProps());
-      LOGGER.info("the configuration items are as follows: " + sessionServerConfig.toString());
+    /**
+     * Do initialized.
+     */
+    public void start() {
+        try {
+            LOGGER.info("release properties: {}", ServerEnv.getReleaseProps());
+            LOGGER.info("the configuration items are as follows: " + sessionServerConfig.toString());
 
-      initEnvironment();
-      ReporterUtils.enablePrometheusDefaultExports();
+            initEnvironment();
+            ReporterUtils.enablePrometheusDefaultExports();
 
-      openSessionSyncServer();
+            openSessionSyncServer();
 
-      startupRetryer.call(
-          () -> {
-            connectMetaServer();
-            return true;
-          });
+            startupRetryer.call(
+                    () -> {
+                        connectMetaServer();
+                        return true;
+                    });
 
-      // wait until slot table is get
-      startupRetryer.call(
-          () -> slotTableCache.getCurrentSlotTable().getEpoch() != SlotTable.INIT.getEpoch());
+            // wait until slot table is get
+            startupRetryer.call(
+                    () -> slotTableCache.getCurrentSlotTable().getEpoch() != SlotTable.INIT.getEpoch());
 
-      recoverConfigRepository.waitSynced();
-      metadataCacheRegistry.waitSynced();
-      clientManagerAddressRepository.waitSynced();
+            recoverConfigRepository.waitSynced();
+            metadataCacheRegistry.waitSynced();
+            clientManagerAddressRepository.waitSynced();
 
-      startupRetryer.call(
-          () -> systemPropertyProcessorManager.startFetchPersistenceSystemProperty());
+            startupRetryer.call(
+                    () -> systemPropertyProcessorManager.startFetchPersistenceSystemProperty());
 
-      startScheduler();
+            startScheduler();
 
-      openHttpServer();
+            openHttpServer();
 
-      startupRetryer.call(
-          () -> {
-            connectDataServer();
-            return true;
-          });
+            startupRetryer.call(
+                    () -> {
+                        connectDataServer();
+                        return true;
+                    });
 
-      sessionRegistryStrategy.start();
-      configProvideDataWatcher.start();
-      registerSerializer();
-      openConsoleServer();
-      openSessionServer();
-      openGrpcSessionServer();
+            sessionRegistryStrategy.start();
+            configProvideDataWatcher.start();
+            registerSerializer();
+            openConsoleServer();
+//      openSessionServer();
+            openGrpcSessionServer();
 
-      TaskMetrics.getInstance().registerBolt();
+            TaskMetrics.getInstance().registerBolt();
 
-      LOGGER.info("Initialized Session Server...");
-      postStart();
-      Runtime.getRuntime().addShutdownHook(new Thread(this::doStop));
-    } catch (Throwable e) {
-      LOGGER.error("Cannot bootstrap session server :", e);
-      throw new RuntimeException("Cannot bootstrap session server :", e);
+            LOGGER.info("Initialized Session Server...");
+            postStart();
+            Runtime.getRuntime().addShutdownHook(new Thread(this::doStop));
+        } catch (Throwable e) {
+            LOGGER.error("Cannot bootstrap session server :", e);
+            throw new RuntimeException("Cannot bootstrap session server :", e);
+        }
     }
-  }
 
-  /** Destroy. */
-  public void destroy() {
-    doStop();
-    Runtime.getRuntime().halt(0);
-  }
-
-  private void postStart() throws Throwable {
-    startupRetryer.call(
-        () -> {
-          LOGGER.info("successful start session server, remove self from blacklist");
-          metaNodeService.removeSelfFromMetaBlacklist();
-          return true;
-        });
-  }
-
-  private void doStop() {
-    try {
-      LOGGER.info("{} Shutting down Session Server..", new Date().toString());
-      stopHttpServer();
-      clientNodeConnectionHandler.stop(); // stop process disconnect event
-      stopServer();
-      // stop http server and client bolt server before add blacklist
-      // make sure client reconnect to other sessions and data
-      gracefulShutdown();
-      stopDataSyncServer();
-      stopConsoleServer();
-      executorManager.stopScheduler();
-    } catch (Throwable e) {
-      LOGGER.error("Shutting down Session Server error!", e);
+    /**
+     * Destroy.
+     */
+    public void destroy() {
+        doStop();
+        Runtime.getRuntime().halt(0);
     }
-    LOGGER.info("{} Session server is now shutdown...", new Date().toString());
-  }
 
-  private void initEnvironment() {
-    LOGGER.info(
-        "Session server Environment: DataCenter {},Region {},ProcessId {}",
-        sessionServerConfig.getSessionServerDataCenter(),
-        sessionServerConfig.getSessionServerRegion(),
-        ServerEnv.PROCESS_ID);
-  }
-
-  private void startScheduler() {
-
-    try {
-      if (schedulerStart.compareAndSet(false, true)) {
-        executorManager.startScheduler();
-        LOGGER.info("Session Scheduler started!");
-      }
-    } catch (Exception e) {
-      schedulerStart.set(false);
-      LOGGER.error("Session Scheduler start error!", e);
-      throw new RuntimeException("Session Scheduler start error!", e);
+    private void postStart() throws Throwable {
+        startupRetryer.call(
+                () -> {
+                    LOGGER.info("successful start session server, remove self from blacklist");
+                    metaNodeService.removeSelfFromMetaBlacklist();
+                    return true;
+                });
     }
-  }
 
-  private void openConsoleServer() {
-    try {
-      if (consoleStart.compareAndSet(false, true)) {
-        consoleServer =
-            boltExchange.open(
-                new URL(
-                    NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getConsolePort()),
-                1024 * 128,
-                1024 * 256,
-                consoleHandlers.toArray(new ChannelHandler[consoleHandlers.size()]));
-        LOGGER.info("Console server started! port:{}", sessionServerConfig.getConsolePort());
-      }
-    } catch (Exception e) {
-      serverStart.set(false);
-      LOGGER.error("Console server start error! port:{}", sessionServerConfig.getConsolePort(), e);
-      throw new RuntimeException("Console server start error!", e);
+    private void doStop() {
+        try {
+            LOGGER.info("{} Shutting down Session Server..", new Date().toString());
+            stopHttpServer();
+            clientNodeConnectionHandler.stop(); // stop process disconnect event
+            stopServer();
+            // stop http server and client bolt server before add blacklist
+            // make sure client reconnect to other sessions and data
+            gracefulShutdown();
+            stopDataSyncServer();
+            stopConsoleServer();
+            executorManager.stopScheduler();
+        } catch (Throwable e) {
+            LOGGER.error("Shutting down Session Server error!", e);
+        }
+        LOGGER.info("{} Session server is now shutdown...", new Date().toString());
     }
-  }
 
-  private void openGrpcSessionServer() {
-    try {
-      if (serverStart.compareAndSet(false, true)) {
-        server =
-            grpcExchange.open(
-                new URL(
-                    NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getServerPort()),
-                serverHandlers);
-        LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort());
-      }
-    } catch (Exception e) {
-      serverStart.set(false);
-      LOGGER.error(
-          "Session grpc server start error! port:{}", sessionServerConfig.getServerPort(), e);
-      throw new RuntimeException("Session grpc server start error!", e);
-    }
-  }
-
-  private void openSessionServer() {
-    try {
-      if (serverStart.compareAndSet(false, true)) {
-        server =
-            boltExchange.open(
-                new URL(
-                    NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getServerPort()),
-                sessionServerConfig.getClientIOLowWaterMark(),
-                sessionServerConfig.getClientIOHighWaterMark(),
-                serverHandlers.toArray(new ChannelHandler[serverHandlers.size()]));
-        LOGGER.info("Session server started! port:{}", sessionServerConfig.getServerPort());
-      }
-    } catch (Exception e) {
-      serverStart.set(false);
-      LOGGER.error("Session server start error! port:{}", sessionServerConfig.getServerPort(), e);
-      throw new RuntimeException("Session server start error!", e);
-    }
-  }
-
-  private void openSessionSyncServer() {
-    try {
-      if (serverForSessionSyncStart.compareAndSet(false, true)) {
-        dataSyncServer =
-            boltExchange.open(
-                new URL(
-                    NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getSyncSessionPort()),
-                sessionServerConfig.getSyncSessionIOLowWaterMark(),
-                sessionServerConfig.getSyncSessionIOHighWaterMark(),
-                sessionSyncHandlers.toArray(new ChannelHandler[sessionSyncHandlers.size()]));
+    private void initEnvironment() {
         LOGGER.info(
-            "Data server for sync started! port:{}", sessionServerConfig.getSyncSessionPort());
-      }
-    } catch (Exception e) {
-      serverForSessionSyncStart.set(false);
-      LOGGER.error(
-          "Data sync server start error! port:{}", sessionServerConfig.getSyncSessionPort(), e);
-      throw new RuntimeException("Data sync server start error!", e);
+                "Session server Environment: DataCenter {},Region {},ProcessId {}",
+                sessionServerConfig.getSessionServerDataCenter(),
+                sessionServerConfig.getSessionServerRegion(),
+                ServerEnv.PROCESS_ID);
     }
-  }
 
-  private void connectDataServer() {
-    try {
-      dataNodeNotifyExchanger.connectServer();
-      dataNodeExchanger.connectServer();
-      dataStart.set(true);
-    } catch (Exception e) {
-      dataStart.set(false);
-      LOGGER.error(
-          "Data server connected server error! port:{}",
-          sessionServerConfig.getDataServerPort(),
-          e);
-      throw new RuntimeException("Data server connected server error!", e);
+    private void startScheduler() {
+
+        try {
+            if (schedulerStart.compareAndSet(false, true)) {
+                executorManager.startScheduler();
+                LOGGER.info("Session Scheduler started!");
+            }
+        } catch (Exception e) {
+            schedulerStart.set(false);
+            LOGGER.error("Session Scheduler start error!", e);
+            throw new RuntimeException("Session Scheduler start error!", e);
+        }
     }
-  }
 
-  private void connectMetaServer() {
-    try {
-      // register node as renew node
-      metaNodeService.renewNode();
-      // start sched renew
-      metaNodeService.startRenewer();
-
-      // start fetch system property data
-      startupRetryer.call(() -> systemPropertyProcessorManager.startFetchMetaSystemProperty());
-
-      metaStart.set(true);
-
-      LOGGER.info(
-          "MetaServer connected meta server! Port:{}", sessionServerConfig.getMetaServerPort());
-    } catch (Exception e) {
-      metaStart.set(false);
-      LOGGER.error(
-          "MetaServer connected server error! Port:{}", sessionServerConfig.getMetaServerPort(), e);
-      throw new RuntimeException("MetaServer connected server error!", e);
+    private void openConsoleServer() {
+        try {
+            if (consoleStart.compareAndSet(false, true)) {
+                consoleServer =
+                        boltExchange.open(
+                                new URL(
+                                        NetUtil.getLocalAddress().getHostAddress(),
+                                        sessionServerConfig.getConsolePort()),
+                                1024 * 128,
+                                1024 * 256,
+                                consoleHandlers.toArray(new ChannelHandler[consoleHandlers.size()]));
+                LOGGER.info("Console server started! port:{}", sessionServerConfig.getConsolePort());
+            }
+        } catch (Exception e) {
+            serverStart.set(false);
+            LOGGER.error("Console server start error! port:{}", sessionServerConfig.getConsolePort(), e);
+            throw new RuntimeException("Console server start error!", e);
+        }
     }
-  }
 
-  private void openHttpServer() {
-    try {
-      if (httpStart.compareAndSet(false, true)) {
-        bindResourceConfig();
-        httpServer =
-            jerseyExchange.open(
-                new URL(
-                    NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getHttpServerPort()),
-                new ResourceConfig[] {jerseyResourceConfig});
-        LOGGER.info("Open http server port {} success!", sessionServerConfig.getHttpServerPort());
-      }
-    } catch (Exception e) {
-      LOGGER.error("Open http server port {} error!", sessionServerConfig.getHttpServerPort(), e);
-      httpStart.set(false);
-      throw new RuntimeException("Open http server error!", e);
+    private void openGrpcSessionServer() {
+        try {
+            if (serverStart.compareAndSet(false, true)) {
+                server = grpcExchange.open(new URL(NetUtil.getLocalAddress().getHostAddress(), sessionServerConfig.getServerPort()),
+                        serverHandlers.toArray(new ChannelHandler[serverHandlers.size()]));
+                LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort());
+            }
+        } catch (Exception e) {
+            serverStart.set(false);
+            LOGGER.error(
+                    "Session grpc server start error! port:{}", sessionServerConfig.getServerPort(), e);
+            throw new RuntimeException("Session grpc server start error!", e);
+        }
     }
-  }
 
-  private void bindResourceConfig() {
-    registerInstances(Path.class);
-    registerInstances(Provider.class);
-  }
-
-  private void registerInstances(Class<? extends Annotation> annotationType) {
-    Map<String, Object> beans = applicationContext.getBeansWithAnnotation(annotationType);
-    if (beans != null && !beans.isEmpty()) {
-      beans.forEach(
-          (beanName, bean) -> {
-            jerseyResourceConfig.registerInstances(bean);
-            jerseyResourceConfig.register(bean.getClass());
-          });
+    private void openSessionServer() {
+        try {
+            if (serverStart.compareAndSet(false, true)) {
+                server =
+                        boltExchange.open(
+                                new URL(
+                                        NetUtil.getLocalAddress().getHostAddress(),
+                                        sessionServerConfig.getServerPort()),
+                                sessionServerConfig.getClientIOLowWaterMark(),
+                                sessionServerConfig.getClientIOHighWaterMark(),
+                                serverHandlers.toArray(new ChannelHandler[serverHandlers.size()]));
+                LOGGER.info("Session server started! port:{}", sessionServerConfig.getServerPort());
+            }
+        } catch (Exception e) {
+            serverStart.set(false);
+            LOGGER.error("Session server start error! port:{}", sessionServerConfig.getServerPort(), e);
+            throw new RuntimeException("Session server start error!", e);
+        }
     }
-  }
 
-  private void registerSerializer() {
-    ProtobufCustomSerializer serializer = new ProtobufCustomSerializer();
-    CustomSerializerManager.registerCustomSerializer(
-        PublisherRegisterPb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(
-        SubscriberRegisterPb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(
-        SyncConfigRequestPb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(
-        SyncConfigResponsePb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(
-        RegisterResponsePb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(ResultPb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(ReceivedDataPb.class.getName(), serializer);
-    CustomSerializerManager.registerCustomSerializer(
-        ReceivedConfigDataPb.class.getName(), serializer);
-
-    SerializerManager.addSerializer(
-        ProtobufSerializer.PROTOCOL_PROTOBUF, ProtobufSerializer.getInstance());
-  }
-
-  private void stopServer() {
-    if (server != null && server.isOpen()) {
-      server.close();
+    private void openSessionSyncServer() {
+        try {
+            if (serverForSessionSyncStart.compareAndSet(false, true)) {
+                dataSyncServer =
+                        boltExchange.open(
+                                new URL(
+                                        NetUtil.getLocalAddress().getHostAddress(),
+                                        sessionServerConfig.getSyncSessionPort()),
+                                sessionServerConfig.getSyncSessionIOLowWaterMark(),
+                                sessionServerConfig.getSyncSessionIOHighWaterMark(),
+                                sessionSyncHandlers.toArray(new ChannelHandler[sessionSyncHandlers.size()]));
+                LOGGER.info(
+                        "Data server for sync started! port:{}", sessionServerConfig.getSyncSessionPort());
+            }
+        } catch (Exception e) {
+            serverForSessionSyncStart.set(false);
+            LOGGER.error(
+                    "Data sync server start error! port:{}", sessionServerConfig.getSyncSessionPort(), e);
+            throw new RuntimeException("Data sync server start error!", e);
+        }
     }
-  }
 
-  private void stopDataSyncServer() {
-    if (dataSyncServer != null && dataSyncServer.isOpen()) {
-      dataSyncServer.close();
+    private void connectDataServer() {
+        try {
+            dataNodeNotifyExchanger.connectServer();
+            dataNodeExchanger.connectServer();
+            dataStart.set(true);
+        } catch (Exception e) {
+            dataStart.set(false);
+            LOGGER.error(
+                    "Data server connected server error! port:{}",
+                    sessionServerConfig.getDataServerPort(),
+                    e);
+            throw new RuntimeException("Data server connected server error!", e);
+        }
     }
-  }
 
-  private void stopConsoleServer() {
-    if (consoleServer != null && consoleServer.isOpen()) {
-      consoleServer.close();
+    private void connectMetaServer() {
+        try {
+            // register node as renew node
+            metaNodeService.renewNode();
+            // start sched renew
+            metaNodeService.startRenewer();
+
+            // start fetch system property data
+            startupRetryer.call(() -> systemPropertyProcessorManager.startFetchMetaSystemProperty());
+
+            metaStart.set(true);
+
+            LOGGER.info(
+                    "MetaServer connected meta server! Port:{}", sessionServerConfig.getMetaServerPort());
+        } catch (Exception e) {
+            metaStart.set(false);
+            LOGGER.error(
+                    "MetaServer connected server error! Port:{}", sessionServerConfig.getMetaServerPort(), e);
+            throw new RuntimeException("MetaServer connected server error!", e);
+        }
     }
-  }
 
-  private void stopHttpServer() {
-    if (httpServer != null && httpServer.isOpen()) {
-      httpServer.close();
+    private void openHttpServer() {
+        try {
+            if (httpStart.compareAndSet(false, true)) {
+                bindResourceConfig();
+                httpServer =
+                        jerseyExchange.open(
+                                new URL(
+                                        NetUtil.getLocalAddress().getHostAddress(),
+                                        sessionServerConfig.getHttpServerPort()),
+                                new ResourceConfig[]{jerseyResourceConfig});
+                LOGGER.info("Open http server port {} success!", sessionServerConfig.getHttpServerPort());
+            }
+        } catch (Exception e) {
+            LOGGER.error("Open http server port {} error!", sessionServerConfig.getHttpServerPort(), e);
+            httpStart.set(false);
+            throw new RuntimeException("Open http server error!", e);
+        }
     }
-  }
 
-  private void gracefulShutdown() {
-    if (!sessionServerConfig.isGracefulShutdown()) {
-      LOGGER.info("disable graceful shutdown, skip add blacklist");
-      return;
+    private void bindResourceConfig() {
+        registerInstances(Path.class);
+        registerInstances(Provider.class);
     }
-    try {
-      addBlacklistRetryer.call(
-          () -> {
-            LOGGER.info("[GracefulShutdown] add self to blacklist");
-            metaNodeService.addSelfToMetaBlacklist();
-            return true;
-          });
-      LOGGER.info("add session self to blacklist successfully");
-    } catch (Throwable e) {
-      LOGGER.error("add session self to blacklist failed", e);
+
+    private void registerInstances(Class<? extends Annotation> annotationType) {
+        Map<String, Object> beans = applicationContext.getBeansWithAnnotation(annotationType);
+        if (beans != null && !beans.isEmpty()) {
+            beans.forEach(
+                    (beanName, bean) -> {
+                        jerseyResourceConfig.registerInstances(bean);
+                        jerseyResourceConfig.register(bean.getClass());
+                    });
+        }
     }
-  }
 
-  /**
-   * Getter method for property <tt>metaStart</tt>.
-   *
-   * @return property value of metaStart
-   */
-  public boolean getMetaStart() {
-    return metaStart.get();
-  }
+    private void registerSerializer() {
+        ProtobufCustomSerializer serializer = new ProtobufCustomSerializer();
+        CustomSerializerManager.registerCustomSerializer(
+                PublisherRegisterPb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(
+                SubscriberRegisterPb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(
+                SyncConfigRequestPb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(
+                SyncConfigResponsePb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(
+                RegisterResponsePb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(ResultPb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(ReceivedDataPb.class.getName(), serializer);
+        CustomSerializerManager.registerCustomSerializer(
+                ReceivedConfigDataPb.class.getName(), serializer);
 
-  /**
-   * Getter method for property <tt>schedulerStart</tt>.
-   *
-   * @return property value of schedulerStart
-   */
-  public boolean getSchedulerStart() {
-    return schedulerStart.get();
-  }
+        SerializerManager.addSerializer(
+                ProtobufSerializer.PROTOCOL_PROTOBUF, ProtobufSerializer.getInstance());
+    }
 
-  /**
-   * Getter method for property <tt>httpStart</tt>.
-   *
-   * @return property value of httpStart
-   */
-  public boolean getHttpStart() {
-    return httpStart.get();
-  }
+    private void stopServer() {
+        if (server != null && server.isOpen()) {
+            server.close();
+        }
+    }
 
-  /**
-   * Getter method for property <tt>serverStart</tt>.
-   *
-   * @return property value of serverStart
-   */
-  public boolean getServerStart() {
-    return serverStart.get();
-  }
+    private void stopDataSyncServer() {
+        if (dataSyncServer != null && dataSyncServer.isOpen()) {
+            dataSyncServer.close();
+        }
+    }
 
-  /**
-   * Getter method for property <tt>dataStart</tt>.
-   *
-   * @return property value of dataStart
-   */
-  public boolean getDataStart() {
-    return dataStart.get();
-  }
+    private void stopConsoleServer() {
+        if (consoleServer != null && consoleServer.isOpen()) {
+            consoleServer.close();
+        }
+    }
 
-  public boolean getConsoleStart() {
-    return consoleStart.get();
-  }
+    private void stopHttpServer() {
+        if (httpServer != null && httpServer.isOpen()) {
+            httpServer.close();
+        }
+    }
 
-  public boolean getServerForSessionSyncStart() {
-    return serverForSessionSyncStart.get();
-  }
+    private void gracefulShutdown() {
+        if (!sessionServerConfig.isGracefulShutdown()) {
+            LOGGER.info("disable graceful shutdown, skip add blacklist");
+            return;
+        }
+        try {
+            addBlacklistRetryer.call(
+                    () -> {
+                        LOGGER.info("[GracefulShutdown] add self to blacklist");
+                        metaNodeService.addSelfToMetaBlacklist();
+                        return true;
+                    });
+            LOGGER.info("add session self to blacklist successfully");
+        } catch (Throwable e) {
+            LOGGER.error("add session self to blacklist failed", e);
+        }
+    }
+
+    /**
+     * Getter method for property <tt>metaStart</tt>.
+     *
+     * @return property value of metaStart
+     */
+    public boolean getMetaStart() {
+        return metaStart.get();
+    }
+
+    /**
+     * Getter method for property <tt>schedulerStart</tt>.
+     *
+     * @return property value of schedulerStart
+     */
+    public boolean getSchedulerStart() {
+        return schedulerStart.get();
+    }
+
+    /**
+     * Getter method for property <tt>httpStart</tt>.
+     *
+     * @return property value of httpStart
+     */
+    public boolean getHttpStart() {
+        return httpStart.get();
+    }
+
+    /**
+     * Getter method for property <tt>serverStart</tt>.
+     *
+     * @return property value of serverStart
+     */
+    public boolean getServerStart() {
+        return serverStart.get();
+    }
+
+    /**
+     * Getter method for property <tt>dataStart</tt>.
+     *
+     * @return property value of dataStart
+     */
+    public boolean getDataStart() {
+        return dataStart.get();
+    }
+
+    public boolean getConsoleStart() {
+        return consoleStart.get();
+    }
+
+    public boolean getServerForSessionSyncStart() {
+        return serverForSessionSyncStart.get();
+    }
 }
