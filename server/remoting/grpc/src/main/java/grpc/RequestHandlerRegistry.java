@@ -14,22 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.server.session.remoting.grpc;
+package grpc;
 
-import com.alipay.sofa.registry.common.model.client.pb.BiPublisherRegisterServiceGrpc;
-import com.alipay.sofa.registry.common.model.client.pb.PublisherRegisterPb;
-import com.alipay.sofa.registry.common.model.client.pb.RegisterResponsePb;
-import io.grpc.stub.StreamObserver;
+import com.alipay.sofa.registry.remoting.ChannelHandler;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author chengzhengzheng
- * @date 2022/11/19
+ * @date 2022/11/20
  */
-public class BiPublisherRegisterAccepter
-    extends BiPublisherRegisterServiceGrpc.BiPublisherRegisterServiceImplBase {
-  @Override
-  public StreamObserver<PublisherRegisterPb> requestBiStream(
-      StreamObserver<RegisterResponsePb> responseObserver) {
-    return super.requestBiStream(responseObserver);
+public class RequestHandlerRegistry {
+  Map<String, ChannelHandler> registryHandlers = new HashMap<>();
+
+  /**
+   * Registry handler
+   *
+   * @param type
+   * @param handler
+   */
+  public void registryHandler(String type, ChannelHandler handler) {
+    registryHandlers.put(type, handler);
+  }
+
+  /**
+   * Get Request Handler By request Type.
+   *
+   * @param requestType see definitions of sub constants classes of RequestTypeConstants
+   * @return request handler.
+   */
+  public ChannelHandler getByRequestType(String requestType) {
+    return registryHandlers.get(requestType);
   }
 }

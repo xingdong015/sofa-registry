@@ -14,20 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.server.session.remoting.grpc;
+package com.alipay.sofa.registry.core.model;
 
-import com.alipay.sofa.registry.common.model.client.pb.PublisherRegisterPb;
-import com.alipay.sofa.registry.common.model.client.pb.PublisherRegisterServiceGrpc;
-import com.alipay.sofa.registry.common.model.client.pb.RegisterResponsePb;
-import io.grpc.stub.StreamObserver;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author chengzhengzheng
- * @date 2022/11/13
+ * @date 2022/11/20
  */
-public class PublisherRegisterAccepter
-    extends PublisherRegisterServiceGrpc.PublisherRegisterServiceImplBase {
-  @Override
-  public void request(
-      PublisherRegisterPb request, StreamObserver<RegisterResponsePb> responseObserver) {}
+public class ConnectionSetupRequest {
+
+  private String clientVersion;
+
+  private Map<String, String> attributes = new HashMap<>();
+
+  public ConnectionSetupRequest() {}
+
+  public String getClientVersion() {
+    return clientVersion;
+  }
+
+  public void setClientVersion(String clientVersion) {
+    this.clientVersion = clientVersion;
+  }
+
+  public Map<String, String> getAttributes() {
+    return attributes;
+  }
+
+  public void setAttributes(Map<String, String> labels) {
+    this.attributes = labels;
+  }
 }

@@ -17,11 +17,11 @@
 package grpc.exchange;
 
 import com.alipay.sofa.registry.common.model.store.URL;
+import com.alipay.sofa.registry.remoting.ChannelHandler;
 import com.alipay.sofa.registry.remoting.Client;
 import com.alipay.sofa.registry.remoting.Server;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import grpc.GrpcServer;
-import io.grpc.BindableService;
 import io.grpc.ServerCall;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import java.util.Arrays;
@@ -31,29 +31,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author chengzhengzheng
  * @date 2022/11/4
  */
-public class GrpcExchange implements Exchange<BindableService> {
+public class GrpcExchange implements Exchange<ChannelHandler> {
 
   private final ConcurrentHashMap<Integer, Server> serverMap = new ConcurrentHashMap<>();
 
   @Override
-  public Client connect(String serverType, URL serverUrl, BindableService... definitions) {
+  public Client connect(String serverType, URL serverUrl, ChannelHandler... definitions) {
     return null;
   }
 
   @Override
   public Client connect(
-      String serverType, int connNum, URL serverUrl, BindableService... channelHandlers) {
+      String serverType, int connNum, URL serverUrl, ChannelHandler... channelHandlers) {
     return null;
   }
 
   @Override
-  public Server open(URL url, BindableService... definitions) {
+  public Server open(URL url, ChannelHandler... definitions) {
     GrpcServer server = createServer(url, definitions);
     server.startServer();
     return server;
   }
 
-  private GrpcServer createServer(URL url, BindableService[] definitions) {
+  private GrpcServer createServer(URL url, ChannelHandler[] definitions) {
     if (definitions == null) {
       throw new IllegalArgumentException("channelHandlers cannot be null!");
     }
@@ -66,12 +66,12 @@ public class GrpcExchange implements Exchange<BindableService> {
     serverMap.putIfAbsent(url.getPort(), server);
   }
 
-  private GrpcServer createGrpcServer(URL url, BindableService[] definitions) {
+  private GrpcServer createGrpcServer(URL url, ChannelHandler[] definitions) {
     return new GrpcServer(url, Arrays.asList(definitions));
   }
 
   @Override
-  public Server open(URL url, int lowWaterMark, int highWaterMark, BindableService... definitions) {
+  public Server open(URL url, int lowWaterMark, int highWaterMark, ChannelHandler... definitions) {
     return null;
   }
 

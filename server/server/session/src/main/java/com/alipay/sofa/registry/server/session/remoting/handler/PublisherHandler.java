@@ -33,9 +33,9 @@ public class PublisherHandler extends AbstractClientDataRequestHandler<Publisher
   @Autowired PublisherHandlerStrategy publisherHandlerStrategy;
 
   @Override
-  public Object doHandle(Channel channel, PublisherRegister publisherRegister) {
+  public Object doHandle(Channel ch, PublisherRegister pr) {
     RegisterResponse result = new RegisterResponse();
-    publisherHandlerStrategy.handlePublisherRegister(channel, publisherRegister, result);
+    publisherHandlerStrategy.handlePublisherRegister(ch, pr, result);
     return result;
   }
 

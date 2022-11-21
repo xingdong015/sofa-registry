@@ -51,8 +51,6 @@ import com.alipay.sofa.registry.server.session.remoting.DataNodeExchanger;
 import com.alipay.sofa.registry.server.session.remoting.DataNodeNotifyExchanger;
 import com.alipay.sofa.registry.server.session.remoting.console.SessionConsoleExchanger;
 import com.alipay.sofa.registry.server.session.remoting.console.handler.*;
-import com.alipay.sofa.registry.server.session.remoting.grpc.BiPublisherRegisterAccepter;
-import com.alipay.sofa.registry.server.session.remoting.grpc.PublisherRegisterAccepter;
 import com.alipay.sofa.registry.server.session.remoting.handler.*;
 import com.alipay.sofa.registry.server.session.resource.*;
 import com.alipay.sofa.registry.server.session.scheduler.timertask.CacheCountTask;
@@ -84,7 +82,6 @@ import com.alipay.sofa.registry.task.MetricsableThreadPoolExecutor;
 import com.alipay.sofa.registry.util.NamedThreadFactory;
 import com.alipay.sofa.registry.util.PropertySplitter;
 import grpc.exchange.GrpcExchange;
-import io.grpc.BindableService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -348,14 +345,6 @@ public class SessionServerConfiguration {
       Collection<AbstractClientHandler> list = new ArrayList<>();
       list.add(dataChangeRequestHandler());
       list.add(dataPushRequestHandler());
-      return list;
-    }
-
-    @Bean(name = "serverDefinitions")
-    public Collection<BindableService> serverDefinitions() {
-      Collection<BindableService> list = new ArrayList<>();
-      list.add(new PublisherRegisterAccepter());
-      list.add(new BiPublisherRegisterAccepter());
       return list;
     }
 
