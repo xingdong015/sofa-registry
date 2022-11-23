@@ -42,17 +42,18 @@ public class GrpcCommonRequestAcceptor extends RequestGrpc.RequestImplBase {
 
   @Override
   public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
-    String connectionId = CONTEXT_KEY_CONN_ID.get();
-
     // 从 pb 协议中解析出实际的数据对象
     Object parseObj = GrpcUtils.parse(grpcRequest);
     // pb 中获取请求参数类型
     String requestType = grpcRequest.getMetadata().getType();
 
     AbstractServerHandler requestHandler = (AbstractServerHandler) requestHandlerRegistry.getByRequestType(requestType);
-    Connection connection = connectionManager.getConnection(connectionId);
+    Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
     connectionManager.refreshActiveTime(CONTEXT_KEY_CONN_ID.get());
     // 模仿 AsyncUserProcessorAdapter.java 自己创建 GrpcChannel 添加封装
-    requestHandler.doHandle(new GrpcChannel(connection), parseObj);
+    Object response = requestHandler.doHandle(new GrpcChannel(connection), parseObj);
+    Payload payloadResponse = GrpcUtils.convert(response);
+    responseObserver.onNext(payloadResponse);
+    responseObserver.onCompleted();
   }
 }

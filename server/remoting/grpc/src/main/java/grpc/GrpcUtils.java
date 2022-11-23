@@ -22,6 +22,7 @@ import com.alipay.sofa.registry.util.JsonUtils;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
+import java.rmi.RemoteException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -49,5 +50,9 @@ public class GrpcUtils {
       return JsonUtils.read(new ByteBufferBackedInputStream(byteBuffer), classType);
     }
     throw new SofaRegistryRuntimeException(" classType error");
+  }
+
+  public static Payload convert(Object payload) {
+   return null;
   }
 }

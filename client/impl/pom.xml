@@ -103,6 +103,10 @@
             <artifactId>jackson-core-asl</artifactId>
             <version>${jackson-core-asl.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>registry-common-model</artifactId>
+        </dependency>
     </dependencies>
 
 
@@ -113,8 +117,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.7.0</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
+                    <source>8</source>
+                    <target>8</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>

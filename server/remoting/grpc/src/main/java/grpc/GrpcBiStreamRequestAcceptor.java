@@ -92,8 +92,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             @Override
             public void onCompleted() {
                 if (responseObserver instanceof ServerCallStreamObserver) {
-                    ServerCallStreamObserver serverCallStreamObserver =
-                            ((ServerCallStreamObserver) responseObserver);
+                    ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
                     if (serverCallStreamObserver.isCancelled()) {
                         // client close the stream.
                     } else {

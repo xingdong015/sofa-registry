@@ -183,6 +183,16 @@ public class SessionServerConfiguration {
       return new SlotTableCacheImpl();
     }
 
+
+    @Bean(name = "grpcServerHandlers")
+    public Collection<AbstractServerHandler> grpcServerHandlers() {
+      Collection<AbstractServerHandler> list = new ArrayList<>();
+      list.add(publisherHandler());
+      list.add(subscriberHandler());
+      list.add(new ServerCheckHandler());
+      return list;
+    }
+
     @Bean(name = "serverHandlers")
     public Collection<AbstractServerHandler> serverHandlers() {
       Collection<AbstractServerHandler> list = new ArrayList<>();

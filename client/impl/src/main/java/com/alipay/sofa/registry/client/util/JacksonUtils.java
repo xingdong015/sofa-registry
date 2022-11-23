@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.client.grpc;
+package com.alipay.sofa.registry.client.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -36,11 +36,6 @@ import java.lang.reflect.Type;
 public final class JacksonUtils {
 
   static ObjectMapper mapper = new ObjectMapper();
-
-  //    static {
-  //        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-  //        mapper.setSerializationInclusion(Include.NON_NULL);
-  //    }
 
   /**
    * Object to json string.

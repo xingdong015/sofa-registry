@@ -40,13 +40,10 @@ import com.alipay.sofa.registry.client.event.ConfiguratorProcessEvent;
 import com.alipay.sofa.registry.client.event.DefaultEventBus;
 import com.alipay.sofa.registry.client.event.LookoutSubscriber;
 import com.alipay.sofa.registry.client.event.SubscriberProcessEvent;
+import com.alipay.sofa.registry.client.constants.ConnectionType;
+import com.alipay.sofa.registry.client.grpc.GrpcClient;
 import com.alipay.sofa.registry.client.log.LoggerFactory;
-import com.alipay.sofa.registry.client.remoting.ClientConnection;
-import com.alipay.sofa.registry.client.remoting.ClientConnectionCloseEventProcessor;
-import com.alipay.sofa.registry.client.remoting.ClientConnectionOpenEventProcessor;
-import com.alipay.sofa.registry.client.remoting.ReceivedConfigDataProcessor;
-import com.alipay.sofa.registry.client.remoting.ReceivedDataProcessor;
-import com.alipay.sofa.registry.client.remoting.ServerManager;
+import com.alipay.sofa.registry.client.remoting.*;
 import com.alipay.sofa.registry.client.task.ObserverHandler;
 import com.alipay.sofa.registry.client.task.SyncConfigThread;
 import com.alipay.sofa.registry.client.task.TaskEvent;
@@ -83,7 +80,7 @@ public class DefaultRegistryClient implements RegistryClient {
 
   private WorkerThread workerThread;
 
-  private ClientConnection client;
+  private Client client;
 
   private Map<Class<?>, UserProcessor> userProcessorMap;
 
@@ -120,6 +117,7 @@ public class DefaultRegistryClient implements RegistryClient {
         new ConcurrentHashMap<ConfiguratorRegistration, Configurator>();
   }
 
+
   private DefaultRegistryClientConfig cloneConfig(RegistryClientConfig registryClientConfig) {
     DefaultRegistryClientConfig cloneConfig = null;
     DefaultRegistryClientConfigBuilder builder = DefaultRegistryClientConfigBuilder.start();
@@ -151,6 +149,11 @@ public class DefaultRegistryClient implements RegistryClient {
 
   /** Init. */
   public void init() {
+    init(ConnectionType.BOLT);
+  }
+
+  /** Init. */
+  public void init(ConnectionType connectionType) {
     if (!init.compareAndSet(false, true)) {
       return;
     }
@@ -202,34 +205,39 @@ public class DefaultRegistryClient implements RegistryClient {
     // init connection event processor
     if (null == connectionEventProcessorMap) {
       connectionEventProcessorMap =
-          new HashMap<ConnectionEventType, ConnectionEventProcessor>(
-              ConnectionEventType.values().length);
+              new HashMap<ConnectionEventType, ConnectionEventProcessor>(
+                      ConnectionEventType.values().length);
     }
     if (null == connectionEventProcessorMap.get(ConnectionEventType.CLOSE)) {
       ClientConnectionCloseEventProcessor connectionCloseEventProcessor =
-          new ClientConnectionCloseEventProcessor();
+              new ClientConnectionCloseEventProcessor();
       connectionEventProcessorMap.put(ConnectionEventType.CLOSE, connectionCloseEventProcessor);
     }
     if (null == connectionEventProcessorMap.get(ConnectionEventType.CONNECT)) {
       ClientConnectionOpenEventProcessor connectionOpenEventProcessor =
-          new ClientConnectionOpenEventProcessor();
+              new ClientConnectionOpenEventProcessor();
       connectionEventProcessorMap.put(ConnectionEventType.CONNECT, connectionOpenEventProcessor);
     }
 
     // init client connection and register worker
-    client =
-        new ClientConnection(
-            serverManager,
-            userProcessorList,
-            connectionEventProcessorMap,
-            registerCache,
-            registryClientConfig);
-
-    workerThread = new WorkerThread(client, registryClientConfig, registerCache);
-    client.setWorker(workerThread);
-
+    if (connectionType == ConnectionType.BOLT){
+      // todo factory facade proxy delegate refactor
+      ClientConnection client = new ClientConnection(
+              serverManager,
+              userProcessorList,
+              connectionEventProcessorMap,
+              registerCache,
+              registryClientConfig);
+      workerThread = new WorkerThread(client, registryClientConfig, registerCache);
+      client.setWorker(workerThread);
+      this.client = client;
+    } else {
+      GrpcClient client = new GrpcClient(serverManager, registerCache, registryClientConfig);
+      workerThread = new WorkerThread(client, registryClientConfig, registerCache);
+      client.setWorker(workerThread);
+      this.client = client;
+    }
     client.init();
-
     // init registry check thread
     new RegistryCheckThread().start();
 

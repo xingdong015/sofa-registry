@@ -16,6 +16,7 @@
  */
 package grpc;
 
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -25,6 +26,7 @@ import java.util.Map;
  * @author chengzhengzheng
  * @date 2022/11/20
  */
+@JsonPOJOBuilder
 public class GrpcConnection extends Connection {
 
   private StreamObserver streamObserver;

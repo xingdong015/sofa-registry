@@ -84,6 +84,10 @@ public class GrpcChannel implements Channel {
     }
   }
 
+  public Connection getConnection() {
+    return connection;
+  }
+
   @Override
   public WebTarget getWebTarget() {
     return null;

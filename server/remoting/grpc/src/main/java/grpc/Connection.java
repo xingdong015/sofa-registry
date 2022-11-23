@@ -102,6 +102,10 @@ public abstract class Connection {
     return new InetSocketAddress(remoteIp, remotePort);
   }
 
+  public String getConnectionId() {
+    return connectionId;
+  }
+
   @Override
   public String toString() {
     return "Connection{"

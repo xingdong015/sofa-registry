@@ -90,6 +90,9 @@ public class SessionServerBootstrap {
     @Resource(name = "serverHandlers")
     private Collection<AbstractServerHandler> serverHandlers;
 
+    @Resource(name = "grpcServerHandlers")
+    private Collection<AbstractServerHandler> grpcServerHandlers;
+
     @Autowired
     protected MetaServerService metaNodeService;
     @Autowired
@@ -308,8 +311,9 @@ public class SessionServerBootstrap {
     private void openGrpcSessionServer() {
         try {
             if (serverStart.compareAndSet(false, true)) {
-                server = grpcExchange.open(new URL(NetUtil.getLocalAddress().getHostAddress(), sessionServerConfig.getServerPort()),
-                        serverHandlers.toArray(new ChannelHandler[serverHandlers.size()]));
+                server = grpcExchange.open(new URL(NetUtil.getLocalAddress().getHostAddress(),
+                                sessionServerConfig.getServerPort()),
+                        grpcServerHandlers.toArray(new ChannelHandler[grpcServerHandlers.size()]));
                 LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort());
             }
         } catch (Exception e) {

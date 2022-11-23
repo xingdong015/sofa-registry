@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.client.grpc;
+package com.alipay.sofa.registry.client.util;
 
 import com.alipay.sofa.registry.client.util.StringUtils;
 import java.io.IOException;
