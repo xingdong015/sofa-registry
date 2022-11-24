@@ -20,7 +20,7 @@ import static grpc.GrpcServer.*;
 
 import com.alipay.sofa.registry.common.model.client.pb.BiRequestStreamGrpc;
 import com.alipay.sofa.registry.common.model.client.pb.Payload;
-import com.alipay.sofa.registry.core.model.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 

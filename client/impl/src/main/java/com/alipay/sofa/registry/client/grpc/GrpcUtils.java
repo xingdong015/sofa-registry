@@ -5,6 +5,7 @@ import com.alipay.sofa.registry.client.util.NetUtils;
 import com.alipay.sofa.registry.common.model.client.pb.Metadata;
 import com.alipay.sofa.registry.common.model.client.pb.Payload;
 import com.alipay.sofa.registry.common.model.client.pb.Request;
+import com.alipay.sofa.registry.core.grpc.PayloadRegistry;
 import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
@@ -19,7 +20,7 @@ import java.nio.ByteBuffer;
  */
 public class GrpcUtils {
 
-    public static Payload convert(ServerCheckRequest request) {
+    public static <T> Payload convert(T request) {
         Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
                 .setClientIp(NetUtils.localIP()).build();
         byte[] jsonBytes = JacksonUtils.toJsonBytes(request);
@@ -31,7 +32,14 @@ public class GrpcUtils {
                 .setMetadata(newMeta).build();
     }
 
-    public static <T> T parse(Payload payload,Class<T> classType) {
+    public static <T> T parse(Payload payload, Class<T> classType) {
+        ByteString byteString = payload.getBody().getValue();
+        ByteBuffer byteBuffer = byteString.asReadOnlyByteBuffer();
+        return JacksonUtils.toObj(new ByteBufferBackedInputStream(byteBuffer), classType);
+    }
+
+    public static Object parse(Payload payload) {
+        Class      classType  = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         ByteString byteString = payload.getBody().getValue();
         ByteBuffer byteBuffer = byteString.asReadOnlyByteBuffer();
         return JacksonUtils.toObj(new ByteBufferBackedInputStream(byteBuffer), classType);
