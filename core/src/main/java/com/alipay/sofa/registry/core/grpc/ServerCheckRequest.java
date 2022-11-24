@@ -1,4 +1,4 @@
-package com.alipay.sofa.registry.client.grpc;
+package com.alipay.sofa.registry.core.grpc;
 
 /**
  * @author chengzhengzheng

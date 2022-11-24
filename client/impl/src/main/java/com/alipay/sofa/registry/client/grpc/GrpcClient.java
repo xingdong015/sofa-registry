@@ -1,9 +1,6 @@
 package com.alipay.sofa.registry.client.grpc;
 
-import com.alipay.remoting.ConnectionEventProcessor;
-import com.alipay.remoting.ConnectionEventType;
 import com.alipay.remoting.exception.RemotingException;
-import com.alipay.remoting.rpc.protocol.UserProcessor;
 import com.alipay.sofa.registry.client.api.RegistryClientConfig;
 import com.alipay.sofa.registry.client.constants.RpcClientStatus;
 import com.alipay.sofa.registry.client.provider.RegisterCache;
@@ -15,15 +12,19 @@ import com.alipay.sofa.registry.client.task.WorkerThread;
 import com.alipay.sofa.registry.common.model.client.pb.BiRequestStreamGrpc;
 import com.alipay.sofa.registry.common.model.client.pb.Payload;
 import com.alipay.sofa.registry.common.model.client.pb.RequestGrpc;
+import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
 import com.alipay.sofa.registry.core.model.ConnectionSetupRequest;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.grpc.*;
+import io.grpc.CompressorRegistry;
+import io.grpc.DecompressorRegistry;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,7 @@ public class GrpcClient implements Client {
 
         // connect to server, try to connect to server sync RETRY_TIMES times, async starting if failed.
         GrpcConnection connectToServer = null;
-        // grpc 状态机，标识连接的不同状态
+
         rpcClientStatus.set(RpcClientStatus.STARTING);
 
         int startUpRetryTimes = RETRY_TIMES;
@@ -109,17 +110,16 @@ public class GrpcClient implements Client {
         }
     }
 
-    private Response serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
+    private ServerCheckResponse serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
         try {
             if (requestBlockingStub == null) {
                 return null;
             }
-            ServerCheckRequest        serverCheckRequest = new ServerCheckRequest();
-            Payload                   grpcRequest        = GrpcUtils.convert(serverCheckRequest);
+            ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
+            Payload            grpcRequest        = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture     = requestBlockingStub.request(grpcRequest);
             Payload                   response           = responseFuture.get(3000L, TimeUnit.MILLISECONDS);
-            //receive connection unregister response here,not check response is success.
-            return (Response) GrpcUtils.parse(response);
+            return GrpcUtils.parse(response, ServerCheckResponse.class);
         } catch (Exception e) {
             return null;
         }
@@ -157,11 +157,11 @@ public class GrpcClient implements Client {
         ManagedChannel                managedChannel     = createNewManagedChannel(host, port);
         RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
         if (newChannelStubTemp != null) {
-            Response response = serverCheck(host, port, newChannelStubTemp);
+            ServerCheckResponse response = serverCheck(host, port, newChannelStubTemp);
 
             BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(newChannelStubTemp.getChannel());
             GrpcConnection                          grpcConn            = new GrpcConnection(serverNode);
-            grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
+            grpcConn.setConnectionId(response.getConnectionId());
 
             //create stream request and bind connection event to this connection.
             StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);

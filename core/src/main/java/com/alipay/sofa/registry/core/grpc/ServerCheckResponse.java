@@ -1,4 +1,4 @@
-package com.alipay.sofa.registry.core.model;
+package com.alipay.sofa.registry.core.grpc;
 
 /**
  * @author chengzhengzheng
@@ -8,6 +8,14 @@ public class ServerCheckResponse {
     private String connectionId;
 
     public ServerCheckResponse(String connectionId) {
+        this.connectionId = connectionId;
+    }
+
+    public String getConnectionId() {
+        return connectionId;
+    }
+
+    public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
 }

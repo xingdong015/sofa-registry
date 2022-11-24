@@ -1,8 +1,7 @@
 package com.alipay.sofa.registry.server.session.remoting.handler;
 
-import com.alipay.sofa.registry.core.model.PublisherRegister;
-import com.alipay.sofa.registry.core.model.ServerCheckRequest;
-import com.alipay.sofa.registry.core.model.ServerCheckResponse;
+import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
 import com.alipay.sofa.registry.remoting.Channel;
 import grpc.GrpcChannel;
 
@@ -18,6 +17,9 @@ public class ServerCheckHandler extends AbstractClientDataRequestHandler<ServerC
 
     @Override
     public Object doHandle(Channel channel, ServerCheckRequest request) {
-        return new ServerCheckResponse(((GrpcChannel)channel).getConnection().getConnectionId());
+        if (channel instanceof GrpcChannel) {
+            return new ServerCheckResponse(((GrpcChannel) channel).getConnection().getConnectionId());
+        }
+        throw new RuntimeException("不支持的通道协议");
     }
 }
