@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.client.util;
+package com.alipay.sofa.registry.core.grpc;
 
-import com.alipay.sofa.registry.client.util.StringUtils;
+
+import io.grpc.netty.shaded.io.netty.util.internal.StringUtil;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;
@@ -49,7 +51,7 @@ public class NetUtils {
    * @return local ip
    */
   public static String localIP() {
-    if (!StringUtils.isEmpty(localIp)) {
+    if (!StringUtil.isNullOrEmpty(localIp)) {
       return localIp;
     }
 

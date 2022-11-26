@@ -1,6 +1,5 @@
 package com.alipay.sofa.registry.client.grpc;
 
-import com.alipay.remoting.exception.RemotingException;
 import com.alipay.sofa.registry.client.api.RegistryClientConfig;
 import com.alipay.sofa.registry.client.constants.RpcClientStatus;
 import com.alipay.sofa.registry.client.log.LoggerFactory;
@@ -10,24 +9,19 @@ import com.alipay.sofa.registry.client.remoting.ServerManager;
 import com.alipay.sofa.registry.client.remoting.ServerNode;
 import com.alipay.sofa.registry.client.task.Worker;
 import com.alipay.sofa.registry.client.task.WorkerThread;
-import com.alipay.sofa.registry.common.model.client.pb.BiRequestStreamGrpc;
-import com.alipay.sofa.registry.common.model.client.pb.Payload;
-import com.alipay.sofa.registry.common.model.client.pb.RequestGrpc;
-import com.alipay.sofa.registry.core.grpc.PayloadRegistry;
-import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
-import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
-import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.alipay.sofa.registry.core.grpc.*;
+import com.alipay.sofa.registry.core.model.RegisterResponse;
+import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -54,7 +48,7 @@ public class GrpcClient implements Client {
     /**
      * handlers to process server push request.
      */
-    protected Map<Class,ServerRequestHandler> serverRequestHandlers = new HashMap<>();
+    protected Map<Class, ServerRequestHandler> serverRequestHandlers = new HashMap<>();
 
 
     /**
@@ -74,7 +68,7 @@ public class GrpcClient implements Client {
     @Override
     public void init() {
         // 将Client状态由INITIALIZED变更为STARTING
-        boolean success = rpcClientStatus.compareAndSet(RpcClientStatus.INITIALIZED, RpcClientStatus.STARTING);
+        boolean success = rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.STARTING);
         if (!success) {
             return;
         }
@@ -86,6 +80,9 @@ public class GrpcClient implements Client {
             try {
                 startUpRetryTimes--;
                 List<ServerNode> serverNodes = new ArrayList<>(serverManager.getServerList());
+                if (CollectionUtils.isEmpty(serverNodes)){
+                    break;
+                }
                 // shuffle server list to make server connections as discrete as possible
                 Collections.shuffle(serverNodes);
 
@@ -107,17 +104,17 @@ public class GrpcClient implements Client {
         }
     }
 
-    private ServerCheckResponse serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
+    private ServerCheckResponse serverCheck(String ip, int port, RequestGrpc.RequestBlockingStub requestBlockingStub) {
         try {
             if (requestBlockingStub == null) {
                 return null;
             }
             ServerCheckRequest        serverCheckRequest = new ServerCheckRequest();
-            Payload                   grpcRequest        = GrpcUtils.convert(serverCheckRequest);
-            ListenableFuture<Payload> responseFuture     = requestBlockingStub.request(grpcRequest);
-            Payload                   response           = responseFuture.get(3000L, TimeUnit.MILLISECONDS);
+            Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
+            Payload response    = requestBlockingStub.request(grpcRequest);
             return GrpcUtils.parse(response, ServerCheckResponse.class);
         } catch (Exception e) {
+            LOGGER.error("Server check fail, please check server {} ,port {} is available , error ={}", ip, port, e);
             return null;
         }
     }
@@ -147,15 +144,33 @@ public class GrpcClient implements Client {
         return managedChannelBuilder.build();
     }
 
+    /**
+     * 连接 connect
+     *
+     * @return
+     */
+    public boolean connect() {
+        List<ServerNode> serverNodes = new ArrayList<>(serverManager.getServerList());
+        for (ServerNode serverNode : serverNodes) {
+            GrpcConnection connectToServer = connectToServer(serverNode);
+            if (null != connectToServer && connectToServer.isFine()) {
+                this.currentConnection = connectToServer;
+                return true;
+            }
+        }
+        return false;
+    }
 
-    private GrpcConnection connectToServer(ServerNode serverNode) throws InterruptedException {
+    private GrpcConnection connectToServer(ServerNode serverNode) {
         String host = serverNode.getHost();
         int    port = serverNode.getPort();
         try {
             ManagedChannel                managedChannel     = createNewManagedChannel(host, port);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
+            RequestGrpc.RequestBlockingStub requestBlockingStub = RequestGrpc.newBlockingStub(managedChannel);
+
             if (newChannelStubTemp != null) {
-                ServerCheckResponse response = serverCheck(host, port, newChannelStubTemp);
+                ServerCheckResponse response = serverCheck(host, port, requestBlockingStub);
 
                 if (response == null) {
                     shuntDownChannel(managedChannel);
@@ -180,7 +195,6 @@ public class GrpcClient implements Client {
                 Thread.sleep(100L);
                 return grpcConn;
             }
-            return null;
         } catch (Exception e) {
             LOGGER.error("[GrpcClient]Fail to connect to server!,error={}", e);
         }
@@ -198,27 +212,21 @@ public class GrpcClient implements Client {
 
             @Override
             public void onNext(Payload payload) {
-                // 这里是来自于服务端的的请求。 对端的数据流，对端也就是服务端
                 LOGGER.debug("[{}]Stream server request receive, original info: {}", grpcConn.getConnectionId(), payload.toString());
-                Object parseBody = GrpcUtils.parse(payload);
-
-                Class      classType  = PayloadRegistry.getClassByType(payload.getMetadata().getType());
-                Object response = serverRequestHandlers.get(classType).requestReply(parseBody);
-                if (response != null) {
-                    sendResponse(response);
-                }
             }
 
             @Override
             public void onError(Throwable throwable) {
-
+                LOGGER.debug("[{}]Stream server Error receive, original info: {}", grpcConn.getConnectionId());
             }
 
             @Override
             public void onCompleted() {
+                LOGGER.debug("[{}]Stream server Completed receive, original info: {}", grpcConn.getConnectionId());
             }
         });
     }
+
     private void sendResponse(Object response) {
         try {
             this.currentConnection.sendResponse(response);
@@ -227,19 +235,28 @@ public class GrpcClient implements Client {
                     response);
         }
     }
+
     @Override
     public boolean isConnected() {
-        return false;
+        return currentConnection != null && currentConnection.isFine();
     }
 
     @Override
     public void ensureConnected() throws InterruptedException {
-
+        if (isConnected()) {
+            return;
+        }
+        while (!connect()) {
+            Thread.sleep(GrpcConnection.RECONNECTING_DELAY);
+        }
     }
 
     @Override
-    public Object invokeSync(Object request) throws RemotingException, InterruptedException {
-        return null;
+    public Object invokeSync(Object request) {
+        Payload          payload = currentConnection.request(request, 100);
+        RegisterResponse response = new RegisterResponse();
+        response.setSuccess(true);
+        return response;
     }
 
     public void setWorker(WorkerThread worker) {

@@ -1,5 +1,6 @@
 package com.alipay.sofa.registry.server.session.remoting.handler;
 
+import com.alibaba.fastjson.JSON;
 import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
 import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
 import com.alipay.sofa.registry.remoting.Channel;
@@ -17,6 +18,7 @@ public class ServerCheckHandler extends AbstractClientDataRequestHandler<ServerC
 
     @Override
     public Object doHandle(Channel channel, ServerCheckRequest request) {
+        System.out.println("ServerCheckHandler ...." + JSON.toJSONString(request));
         if (channel instanceof GrpcChannel) {
             return new ServerCheckResponse(((GrpcChannel) channel).getConnection().getConnectionId());
         }

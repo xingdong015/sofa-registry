@@ -16,6 +16,7 @@
  */
 package grpc;
 
+import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
 import com.alipay.sofa.registry.core.model.PublisherRegister;
 import com.alipay.sofa.registry.core.model.SubscriberRegister;
 import java.lang.reflect.Modifier;
@@ -29,6 +30,7 @@ public class PayloadRegistry {
     // todo 自动扫描的方式
     register(PublisherRegister.class.getSimpleName(), PublisherRegister.class);
     register(SubscriberRegister.class.getSimpleName(), SubscriberRegister.class);
+    register(ServerCheckRequest.class.getSimpleName(), ServerCheckRequest.class);
   }
 
   static void register(String type, Class<?> clazz) {

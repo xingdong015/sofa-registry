@@ -1,11 +1,14 @@
 package com.alipay.sofa.registry.client.grpc;
 
 import com.alipay.sofa.registry.client.remoting.ServerNode;
-import com.alipay.sofa.registry.common.model.client.pb.Payload;
-import com.alipay.sofa.registry.common.model.client.pb.RequestGrpc;
-import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.Payload;
+import com.alipay.sofa.registry.core.grpc.RequestGrpc;
+import com.alipay.sofa.registry.core.utils.GrpcUtils;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author chengzhengzheng
@@ -16,11 +19,12 @@ public class GrpcConnection {
     private   String         connectionId;
     protected ManagedChannel channel;
 
-    protected StreamObserver<Payload> payloadStreamObserver;
+    protected           StreamObserver<Payload>       payloadStreamObserver;
+    public static final int                           RECONNECTING_DELAY = 5000;
     /**
      * stub to send request.
      */
-    protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
+    protected           RequestGrpc.RequestFutureStub grpcFutureServiceStub;
 
     public GrpcConnection(ServerNode serverNode) {
         this.serverNode = serverNode;
@@ -69,9 +73,20 @@ public class GrpcConnection {
         this.channel = managedChannel;
     }
 
-    public void sendRequest(ConnectionSetupRequest request) {
+    public <T> void sendRequest(T request) {
         Payload convert = GrpcUtils.convert(request);
         payloadStreamObserver.onNext(convert);
+    }
+
+    public <T> Payload request(T request, long timeouts) {
+        Payload                   grpcRequest   = GrpcUtils.convert(request);
+        ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+        try {
+            return requestFuture.get(timeouts, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isFine() {

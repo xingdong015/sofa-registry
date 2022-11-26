@@ -43,13 +43,6 @@ public final class JsonUtils {
     }
   }
 
-  public static <T> T read(InputStream inputStream, Class<T> clazz) {
-    try {
-      return JACKSON_MAPPER.get().readValue(inputStream, clazz);
-    } catch (IOException e) {
-      throw new RuntimeException("failed to read json to " + clazz.getName());
-    }
-  }
 
   public static <T> T read(String str, TypeReference<T> typeReference) {
     try {

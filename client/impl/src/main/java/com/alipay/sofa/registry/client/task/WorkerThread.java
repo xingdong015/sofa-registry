@@ -95,7 +95,6 @@ public class WorkerThread extends AbstractWorkerThread {
     while (true) {
       try {
         // check connection status, try to reconnect to the server when connection lose
-        client.ensureConnected();
 
         if (requestQueue.isEmpty()) {
           await(config.getRecheckInterval());

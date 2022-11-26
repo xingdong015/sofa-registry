@@ -16,8 +16,11 @@
  */
 package grpc;
 
-import com.alipay.sofa.registry.common.model.client.pb.Payload;
 import com.alipay.sofa.registry.common.model.store.URL;
+import com.alipay.sofa.registry.core.grpc.Payload;
+import com.alipay.sofa.registry.core.utils.GrpcUtils;
+import com.alipay.sofa.registry.log.Logger;
+import com.alipay.sofa.registry.log.LoggerFactory;
 import com.alipay.sofa.registry.remoting.CallbackHandler;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.ChannelHandler;
@@ -26,6 +29,8 @@ import io.grpc.*;
 import io.grpc.internal.ServerStream;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
+import io.grpc.util.MutableHandlerRegistry;
+import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -39,6 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2022/11/6
  */
 public class GrpcServer implements Server {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcServer.class);
 
     private io.grpc.Server grpcServer;
 
@@ -83,32 +90,13 @@ public class GrpcServer implements Server {
     public GrpcServer(URL url, List<ChannelHandler> grpcDefinitions) {
         this.url                    = url;
         this.handlers               = grpcDefinitions;
-        this.grpcServer             = newGrpcServer();
         this.requestHandlerRegistry = new RequestHandlerRegistry();
         this.connectionManager      = new ConnectionManager();
+        this.grpcServer             = newGrpcServer();
     }
 
     private io.grpc.Server newGrpcServer() {
-        ServerBuilder<?> serverBuilder = ServerBuilder.forPort(url.getPort()).executor(GrpcUtils.grpcServerExecutor).maxInboundMessageSize(10 * 1024 * 1024).compressorRegistry(CompressorRegistry.getDefaultInstance()).decompressorRegistry(DecompressorRegistry.getDefaultInstance()).addTransportFilter(new ServerTransportFilter() {
-            @Override
-            public Attributes transportReady(Attributes transportAttrs) {
-                InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
-                InetSocketAddress localAddress  = (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
-                int               remotePort    = remoteAddress.getPort();
-                int               localPort     = localAddress.getPort();
-                String            remoteIp      = remoteAddress.getAddress().getHostAddress();
-                return transportAttrs.toBuilder().
-                        set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort).
-                        set(TRANS_KEY_REMOTE_IP, remoteIp).
-                        set(TRANS_KEY_REMOTE_PORT, remotePort).
-                        set(TRANS_KEY_LOCAL_PORT, localPort).build();
-            }
-
-            @Override
-            public void transportTerminated(Attributes transportAttrs) {
-                System.out.println("transportTerminated.......");
-            }
-        });
+        final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
 
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
@@ -127,28 +115,77 @@ public class GrpcServer implements Server {
             }
         };
 
-        return addServices(serverBuilder, serverInterceptor).build();
+        addServices(handlerRegistry, serverInterceptor);
+
+        return ServerBuilder.forPort(url.getPort()).executor(GrpcUtils.grpcServerExecutor).
+                maxInboundMessageSize(10 * 1024 * 1024).
+                compressorRegistry(CompressorRegistry.getDefaultInstance()).
+                decompressorRegistry(DecompressorRegistry.getDefaultInstance()).
+                fallbackHandlerRegistry(handlerRegistry).
+                addTransportFilter(new ServerTransportFilter() {
+                    @Override
+                    public Attributes transportReady(Attributes transportAttrs) {
+                        InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+                        InetSocketAddress localAddress  = (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
+                        int               remotePort    = remoteAddress.getPort();
+                        int               localPort     = localAddress.getPort();
+                        String            remoteIp      = remoteAddress.getAddress().getHostAddress();
+                        return transportAttrs.toBuilder().
+                                set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort).
+                                set(TRANS_KEY_REMOTE_IP, remoteIp).
+                                set(TRANS_KEY_REMOTE_PORT, remotePort).
+                                set(TRANS_KEY_LOCAL_PORT, localPort).build();
+                    }
+
+                    @Override
+                    public void transportTerminated(Attributes transportAttrs) {
+                        LOGGER.info("transport terminated transportAttrs={}", transportAttrs);
+                        String connectionId = null;
+                        try {
+                            connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
+                        } catch (Exception e) {
+                            // Ignore
+                        }
+                        if (StringUtils.isNotBlank(connectionId)) {
+                            LOGGER.info("Connection transportTerminated,connectionId = {} ", connectionId);
+                            connectionManager.unregister(connectionId);
+                        }
+                    }
+                }).build();
     }
 
-    private ServerBuilder addServices(ServerBuilder serverBuilder, ServerInterceptor... serverInterceptor) {
+    private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor serverInterceptor) {
         // unary common call register.
-        final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder().setType(MethodDescriptor.MethodType.UNARY).setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME)).setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+        final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
+                .setType(MethodDescriptor.MethodType.UNARY)
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
 
-        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall((request, responseObserver) -> new GrpcCommonRequestAcceptor(requestHandlerRegistry, connectionManager).request(request, responseObserver));
+        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
+                .asyncUnaryCall((request, responseObserver) -> new GrpcCommonRequestAcceptor(requestHandlerRegistry, connectionManager)
+                        .request(request, responseObserver));
 
-        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME).addMethod(unaryPayloadMethod, payloadHandler).build();
-        serverBuilder.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
+        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
+                .addMethod(unaryPayloadMethod, payloadHandler).build();
+        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
 
         // bi stream register.
-        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall((responseObserver) -> new GrpcBiStreamRequestAcceptor(requestHandlerRegistry, connectionManager).requestBiStream(responseObserver));
+        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
+                (responseObserver) -> new GrpcBiStreamRequestAcceptor(requestHandlerRegistry, connectionManager).requestBiStream(responseObserver));
 
-        final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder().setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME)).setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build())).setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+        final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
 
-        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition.builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
-        serverBuilder.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
+        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
+                .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
+        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
 
-        return serverBuilder;
     }
+
 
     @Override
     public InetSocketAddress getLocalAddress() {

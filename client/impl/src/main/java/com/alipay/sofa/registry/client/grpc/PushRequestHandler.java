@@ -6,7 +6,7 @@ package com.alipay.sofa.registry.client.grpc;
  */
 public class PushRequestHandler implements ServerRequestHandler<Object,Object> {
     @Override
-    public Object requestReply(Object request) {
+    public Object requestReply(Object request, GrpcConnection grpcConn) {
         return null;
     }
 }

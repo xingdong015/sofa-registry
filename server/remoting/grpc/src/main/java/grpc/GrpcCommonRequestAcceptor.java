@@ -18,9 +18,11 @@ package grpc;
 
 import static grpc.GrpcServer.CONTEXT_KEY_CONN_ID;
 
-import com.alipay.sofa.registry.common.model.client.pb.Payload;
-import com.alipay.sofa.registry.common.model.client.pb.RequestGrpc;
-import com.alipay.sofa.registry.remoting.Channel;
+import com.alipay.sofa.registry.core.grpc.Payload;
+import com.alipay.sofa.registry.core.grpc.RequestGrpc;
+import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
+import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import com.alipay.sofa.registry.server.shared.remoting.AbstractServerHandler;
 import io.grpc.stub.StreamObserver;
 
@@ -42,11 +44,16 @@ public class GrpcCommonRequestAcceptor extends RequestGrpc.RequestImplBase {
 
   @Override
   public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
-    // 从 pb 协议中解析出实际的数据对象
-    Object parseObj = GrpcUtils.parse(grpcRequest);
-    // pb 中获取请求参数类型
+    // 1. 从 pb 协议中解析出实际的数据对象
+    // 2. pb 中获取请求参数类型
     String requestType = grpcRequest.getMetadata().getType();
-
+    if (ServerCheckRequest.class.getSimpleName().equals(requestType)) {
+      Payload serverCheckResponsePayload = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get()));
+      responseObserver.onNext(serverCheckResponsePayload);
+      responseObserver.onCompleted();
+      return;
+    }
+    Object parseObj = GrpcUtils.parse(grpcRequest);
     AbstractServerHandler requestHandler = (AbstractServerHandler) requestHandlerRegistry.getByRequestType(requestType);
     Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
     connectionManager.refreshActiveTime(CONTEXT_KEY_CONN_ID.get());

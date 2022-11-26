@@ -16,6 +16,9 @@
  */
 package grpc;
 
+import com.alipay.sofa.registry.log.Logger;
+import com.alipay.sofa.registry.log.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2022/11/20
  */
 public class ConnectionManager {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
 
   private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<>(16);
 
@@ -77,6 +82,26 @@ public class ConnectionManager {
     Connection connection = connections.get(connectionId);
     if (connection != null) {
       connection.freshActiveTime();
+    }
+  }
+
+  /**
+   * connection un register
+   * @param connectionId
+   */
+  public void unregister(String connectionId) {
+    Connection remove = this.connections.remove(connectionId);
+    if (remove != null) {
+      String clientIp = remove.clientIp;
+      AtomicInteger atomicInteger = connectionForClientIp.get(clientIp);
+      if (atomicInteger != null) {
+        int count = atomicInteger.decrementAndGet();
+        if (count <= 0) {
+          connectionForClientIp.remove(clientIp);
+        }
+      }
+      remove.close();
+      LOGGER.info("[{}]Connection unregistered successfully. ", connectionId);
     }
   }
 }

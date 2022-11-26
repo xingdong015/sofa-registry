@@ -7,6 +7,9 @@ package com.alipay.sofa.registry.core.grpc;
 public class ServerCheckResponse {
     private String connectionId;
 
+    public ServerCheckResponse() {
+    }
+
     public ServerCheckResponse(String connectionId) {
         this.connectionId = connectionId;
     }

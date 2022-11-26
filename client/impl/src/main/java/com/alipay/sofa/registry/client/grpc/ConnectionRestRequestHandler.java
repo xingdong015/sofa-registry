@@ -10,7 +10,9 @@ import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
 public class ConnectionRestRequestHandler implements ServerRequestHandler<ConnectionSetupRequest, ConnectResetResponse> {
 
     @Override
-    public ConnectResetResponse requestReply(ConnectionSetupRequest request) {
-        return null;
+    public ConnectResetResponse requestReply(ConnectionSetupRequest request, GrpcConnection grpcConn) {
+        ConnectResetResponse connectResetResponse = new ConnectResetResponse();
+        grpcConn.sendResponse(connectResetResponse);
+        return connectResetResponse;
     }
 }

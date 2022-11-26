@@ -18,9 +18,10 @@ package grpc;
 
 import static grpc.GrpcServer.*;
 
-import com.alipay.sofa.registry.common.model.client.pb.BiRequestStreamGrpc;
-import com.alipay.sofa.registry.common.model.client.pb.Payload;
+import com.alipay.sofa.registry.core.grpc.BiRequestStreamGrpc;
 import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.Payload;
+import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
