@@ -217,7 +217,7 @@ public class GrpcClient implements Client {
 
             @Override
             public void onError(Throwable throwable) {
-                LOGGER.debug("[{}]Stream server Error receive, original info: {}", grpcConn.getConnectionId());
+                LOGGER.error("[{}]Stream server Error receive, original info: {}", grpcConn.getConnectionId(),throwable);
             }
 
             @Override

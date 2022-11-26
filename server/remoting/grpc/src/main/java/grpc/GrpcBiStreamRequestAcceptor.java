@@ -24,14 +24,17 @@ import com.alipay.sofa.registry.core.grpc.Payload;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author chengzhengzheng
  * @date 2022/11/20
  */
 public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestStreamImplBase {
+    public static final Logger                 LOGGER = LoggerFactory.getLogger(GrpcBiStreamRequestAcceptor.class);
 
-    private final RequestHandlerRegistry requestHandlerRegistry;
+    private final       RequestHandlerRegistry requestHandlerRegistry;
 
     private final ConnectionManager connectionManager;
 
@@ -81,13 +84,14 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             CONTEXT_KEY_CHANNEL.get());
 
                     if (!connectionManager.register(connectionId, connection)) {
-                        System.out.println("注册异常。。。。。。。。。。");
+                        LOGGER.error("register to connection manager error {}", connectionId);
                     }
                 }
             }
 
             @Override
             public void onError(Throwable t) {
+                LOGGER.error("requestBiStream error",t);
             }
 
             @Override
