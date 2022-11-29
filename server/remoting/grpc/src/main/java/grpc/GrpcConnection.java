@@ -17,6 +17,7 @@
 package grpc;
 
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import io.grpc.internal.ServerStream;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -31,7 +32,6 @@ public class GrpcConnection extends Connection {
 
   private StreamObserver streamObserver;
 
-  private Channel channel;
 
   public GrpcConnection(
       String connectionId,
@@ -41,23 +41,21 @@ public class GrpcConnection extends Connection {
       int remotePort,
       String version,
       Map<String, String> attributes,
-      StreamObserver streamObserver,
-      Channel channel) {
+      StreamObserver streamObserver) {
     super(connectionId, clientIp, localPort, remoteIp, remotePort, version, attributes);
     this.streamObserver = streamObserver;
-    this.channel = channel;
   }
 
   @Override
   public boolean isConnected() {
-    return channel != null && channel.isActive();
+    return true;
   }
 
   @Override
   public void close() {
     try {
       closeBiStream();
-      channel.close();
+      //todo
     } catch (Exception e) {
       e.printStackTrace();
     }

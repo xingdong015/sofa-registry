@@ -75,7 +75,6 @@ public class GrpcServer implements Server {
 
     static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
 
-    static final    Context.Key<io.grpc.netty.shaded.io.netty.channel.Channel> CONTEXT_KEY_CHANNEL = Context.key("ctx_channel");
     /**
      * accoding server port can not be null
      */
@@ -107,10 +106,6 @@ public class GrpcServer implements Server {
                         withValue(CONTEXT_KEY_CONN_REMOTE_IP, call.getAttributes().get(TRANS_KEY_REMOTE_IP)).
                         withValue(CONTEXT_KEY_CONN_REMOTE_PORT, call.getAttributes().get(TRANS_KEY_REMOTE_PORT)).
                         withValue(CONTEXT_KEY_CONN_LOCAL_PORT, call.getAttributes().get(TRANS_KEY_LOCAL_PORT));
-                if (REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
-                    io.grpc.netty.shaded.io.netty.channel.Channel internalChannel = getInternalChannel(call);
-                    ctx = ctx.withValue(CONTEXT_KEY_CHANNEL, internalChannel);
-                }
                 return Contexts.interceptCall(ctx, call, headers, next);
             }
         };
@@ -271,9 +266,8 @@ public class GrpcServer implements Server {
         }
     }
 
-    private static io.grpc.netty.shaded.io.netty.channel.Channel getInternalChannel(ServerCall serverCall) {
-        ServerStream serverStream = (ServerStream) getFieldValue(serverCall, "stream");
-        return (io.grpc.netty.shaded.io.netty.channel.Channel) getFieldValue(serverStream, "channel");
+    private static ServerStream getInternalChannel(ServerCall serverCall) {
+        return (ServerStream) getFieldValue(serverCall, "stream");
     }
 
     /**

@@ -80,8 +80,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             remotePort,
                             setUpRequest.getClientVersion(),
                             setUpRequest.getAttributes(),
-                            responseObserver,
-                            CONTEXT_KEY_CHANNEL.get());
+                            responseObserver);
 
                     if (!connectionManager.register(connectionId, connection)) {
                         LOGGER.error("register to connection manager error {}", connectionId);
