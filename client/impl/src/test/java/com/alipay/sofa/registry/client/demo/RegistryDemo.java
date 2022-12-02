@@ -50,10 +50,10 @@ public class RegistryDemo {
     registration.setAppName("TEST_APP");
 
     // 将注册表注册进客户端并发布数据
-//    Publisher publisher = registryClient.register(registration, "10.10.1.1:12200?xx=yy");
+    Publisher publisher = registryClient.register(registration, "10.10.1.1:12200?xx=yy");
 
     // 如需覆盖上次发布的数据可以使用发布者模型重新发布数据
-//    publisher.republish("10.10.1.1:12200?xx=zz");
+    publisher.republish("10.10.1.1:12200?xx=zz");
 
     // 创建 SubscriberDataObserver
     SubscriberDataObserver subscriberDataObserver =
@@ -73,7 +73,7 @@ public class RegistryDemo {
     subscriberRegistration.setScopeEnum(ScopeEnum.global);
 
     // 将注册表注册进客户端并订阅数据，订阅到的数据会以回调的方式通知 SubscriberDataObserver
-//    Subscriber subscriber = registryClient.register(subscriberRegistration);
+    Subscriber subscriber = registryClient.register(subscriberRegistration);
 
     System.in.read();
   }

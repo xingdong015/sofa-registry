@@ -1,9 +1,6 @@
 package com.alipay.sofa.registry.core.grpc;
 
-import com.alipay.sofa.registry.core.model.PublisherRegister;
-import com.alipay.sofa.registry.core.model.RegisterResponse;
-import com.alipay.sofa.registry.core.model.SyncConfigRequest;
-import com.alipay.sofa.registry.core.model.SyncConfigResponse;
+import com.alipay.sofa.registry.core.model.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +24,7 @@ public class PayloadRegistry {
     private static void init() {
         REGISTRY_REQUEST.put(PublisherRegister.class.getSimpleName(),PublisherRegister.class);
         REGISTRY_REQUEST.put(RegisterResponse.class.getSimpleName(),RegisterResponse.class);
+        REGISTRY_REQUEST.put(SubscriberRegister.class.getSimpleName(),SubscriberRegister.class);
         REGISTRY_REQUEST.put(SyncConfigRequest.class.getSimpleName(),SyncConfigRequest.class);
         REGISTRY_REQUEST.put(SyncConfigResponse.class.getSimpleName(),SyncConfigResponse.class);
         REGISTRY_REQUEST.put(ServerCheckRequest.class.getSimpleName(),ServerCheckRequest.class);

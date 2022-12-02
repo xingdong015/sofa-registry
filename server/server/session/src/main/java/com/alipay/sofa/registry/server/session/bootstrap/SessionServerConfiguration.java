@@ -17,6 +17,7 @@
 package com.alipay.sofa.registry.server.session.bootstrap;
 
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInterceptor;
+import com.alipay.sofa.registry.core.model.SubscriberRegister;
 import com.alipay.sofa.registry.core.model.SyncConfigRequest;
 import com.alipay.sofa.registry.jdbc.config.JdbcConfiguration;
 import com.alipay.sofa.registry.jraft.config.RaftConfiguration;
@@ -204,6 +205,7 @@ public class SessionServerConfiguration {
       list.add(subscriberHandler());
       list.add(serverCheckHandler());
       list.add(syncConfigHandler());
+      list.add(subscriberHandler());
       return list;
     }
 

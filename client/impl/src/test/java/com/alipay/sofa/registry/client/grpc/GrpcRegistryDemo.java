@@ -18,6 +18,7 @@ package com.alipay.sofa.registry.client.grpc;
 
 import com.alipay.sofa.registry.client.api.Publisher;
 import com.alipay.sofa.registry.client.api.RegistryClientConfig;
+import com.alipay.sofa.registry.client.api.Subscriber;
 import com.alipay.sofa.registry.client.api.SubscriberDataObserver;
 import com.alipay.sofa.registry.client.api.model.UserData;
 import com.alipay.sofa.registry.client.api.registration.PublisherRegistration;
@@ -33,26 +34,46 @@ import java.io.IOException;
  * @author chengzhengzheng
  * @date 2022/3/12
  */
+
 public class GrpcRegistryDemo {
-  public static void main(String[] args) throws IOException {
-    RegistryClientConfig config =
-        DefaultRegistryClientConfigBuilder.start()
-            .setRegistryEndpoint("127.0.0.1")
-            .setRegistryEndpointPort(9603)
-            .build();
-    DefaultRegistryClient registryClient = new DefaultRegistryClient(config);
-    registryClient.init(ConnectionType.GRPC);
+    public static void main(String[] args) throws IOException {
+        RegistryClientConfig config =
+                DefaultRegistryClientConfigBuilder.start()
+                        .setRegistryEndpoint("127.0.0.1")
+                        .setRegistryEndpointPort(9603)
+                        .build();
+        DefaultRegistryClient registryClient = new DefaultRegistryClient(config);
+        registryClient.init(ConnectionType.GRPC);
 
-    // 构造发布者注册表
-    PublisherRegistration registration =
-        new PublisherRegistration("com.alipay.test.demo.service:1.0@DEFAULT");
-    registration.setGroup("TEST_GROUP");
-    registration.setAppName("TEST_APP");
+        // 构造发布者注册表
+        PublisherRegistration registration =
+                new PublisherRegistration("com.alipay.test.demo.service:1.0@DEFAULT");
+        registration.setGroup("TEST_GROUP");
+        registration.setAppName("TEST_APP");
 
-    // 将注册表注册进客户端并发布数据
-    Publisher publisher = registryClient.register(registration, "10.10.1.1:12200?xx=yy");
+        // 将注册表注册进客户端并发布数据
+        Publisher publisher = registryClient.register(registration, "10.10.1.1:12200?xx=yy");
 
+        // 创建 SubscriberDataObserver
+        SubscriberDataObserver subscriberDataObserver =
+                new SubscriberDataObserver() {
+                    @Override
+                    public void handleData(String dataId, UserData userData) {
+                        System.out.println("receive data success, dataId: " + dataId + ", data: " + userData);
+                    }
+                };
 
-    System.in.read();
-  }
+        // 构造订阅者注册表，设置订阅维度，ScopeEnum 共有三种级别 zone, dataCenter, global
+        String dataId = "com.alipay.test.demo.service:1.0@DEFAULT";
+        SubscriberRegistration subscriberRegistration =
+                new SubscriberRegistration(dataId, subscriberDataObserver);
+        subscriberRegistration.setGroup("TEST_GROUP");
+        subscriberRegistration.setAppName("TEST_APP");
+        subscriberRegistration.setScopeEnum(ScopeEnum.global);
+
+        // 将注册表注册进客户端并订阅数据，订阅到的数据会以回调的方式通知 SubscriberDataObserver
+        Subscriber subscriber = registryClient.register(subscriberRegistration);
+
+        System.in.read();
+    }
 }
