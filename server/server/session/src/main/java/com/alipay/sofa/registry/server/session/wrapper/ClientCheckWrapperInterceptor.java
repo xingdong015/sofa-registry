@@ -21,8 +21,8 @@ import com.alipay.sofa.registry.common.model.wrapper.WrapperInterceptor;
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInvocation;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Server;
-import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
+import com.alipay.sofa.registry.server.session.bootstrap.ExchangeManager;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -37,7 +37,8 @@ public class ClientCheckWrapperInterceptor
 
   @Autowired private SessionServerConfig sessionServerConfig;
 
-  @Autowired private Exchange boltExchange;
+  @Autowired private ExchangeManager exchangeManager;
+
 
   @Override
   public Boolean invokeCodeWrapper(WrapperInvocation<RegisterInvokeData, Boolean> invocation)
@@ -46,7 +47,7 @@ public class ClientCheckWrapperInterceptor
     RegisterInvokeData registerInvokeData = invocation.getParameterSupplier().get();
     BaseInfo baseInfo = (BaseInfo) registerInvokeData.getStoreData();
 
-    Server sessionServer = boltExchange.getServer(sessionServerConfig.getServerPort());
+    Server sessionServer = exchangeManager.getSessionExchange().getServer(sessionServerConfig.getServerPort());
 
     Channel channel = sessionServer.getChannel(baseInfo.getSourceAddress());
 

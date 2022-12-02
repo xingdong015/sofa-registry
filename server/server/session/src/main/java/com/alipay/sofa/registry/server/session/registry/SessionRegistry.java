@@ -26,13 +26,13 @@ import com.alipay.sofa.registry.log.Logger;
 import com.alipay.sofa.registry.log.LoggerFactory;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Server;
-import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.ExchangeCallback;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
 import com.alipay.sofa.registry.server.session.acceptor.ClientOffWriteDataRequest;
 import com.alipay.sofa.registry.server.session.acceptor.PublisherWriteDataRequest;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataAcceptor;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataRequest;
+import com.alipay.sofa.registry.server.session.bootstrap.ExchangeManager;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
 import com.alipay.sofa.registry.server.session.loggers.Loggers;
 import com.alipay.sofa.registry.server.session.node.service.DataNodeService;
@@ -90,7 +90,7 @@ public class SessionRegistry implements Registry {
 
   @Autowired protected PushSwitchService pushSwitchService;
 
-  @Autowired protected Exchange boltExchange;
+  @Autowired protected ExchangeManager exchangeManager;
 
   @Autowired protected SessionRegistryStrategy sessionRegistryStrategy;
 
@@ -605,7 +605,7 @@ public class SessionRegistry implements Registry {
   }
 
   public void cleanClientConnect() {
-    Server sessionServer = boltExchange.getServer(sessionServerConfig.getServerPort());
+    Server sessionServer = exchangeManager.getSessionExchange().getServer(sessionServerConfig.getServerPort());
     if (sessionServer == null) {
       LOGGER.warn("server not init when clean connect: {}", sessionServerConfig.getServerPort());
       return;

@@ -16,6 +16,7 @@
  */
 package grpc;
 
+import com.alipay.remoting.Url;
 import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.core.grpc.Payload;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
@@ -25,6 +26,7 @@ import com.alipay.sofa.registry.remoting.CallbackHandler;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.ChannelHandler;
 import com.alipay.sofa.registry.remoting.Server;
+import com.alipay.sofa.registry.remoting.bolt.BoltChannel;
 import io.grpc.*;
 import io.grpc.internal.ServerStream;
 import io.grpc.protobuf.ProtoUtils;
@@ -223,7 +225,8 @@ public class GrpcServer implements Server {
 
     @Override
     public Channel getChannel(URL url) {
-        return null;
+        Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
+        return new GrpcChannel(connection);
     }
 
     @Override

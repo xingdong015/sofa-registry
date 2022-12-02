@@ -154,6 +154,18 @@ public class SessionServerConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(name = "grpcExchange")
+    public Exchange grpcExchange() {
+      return new GrpcExchange();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "exchangeManager")
+    public ExchangeManager exchangeManager() {
+      return new ExchangeManager();
+    }
+
+    @Bean
     public NodeExchanger clientNodeExchanger() {
       return new ClientNodeExchanger();
     }
@@ -189,7 +201,7 @@ public class SessionServerConfiguration {
       Collection<AbstractServerHandler> list = new ArrayList<>();
       list.add(publisherHandler());
       list.add(subscriberHandler());
-      list.add(new ServerCheckHandler());
+      list.add(serverCheckHandler());
       return list;
     }
 
@@ -242,6 +254,11 @@ public class SessionServerConfiguration {
     @Bean
     public AbstractServerHandler syncConfigHandler() {
       return new SyncConfigHandler();
+    }
+
+    @Bean
+    public AbstractServerHandler serverCheckHandler() {
+      return new ServerCheckHandler();
     }
 
     @Bean
@@ -358,11 +375,6 @@ public class SessionServerConfiguration {
       return list;
     }
 
-    @Bean
-    @ConditionalOnMissingBean(name = "grpcExchange")
-    public Exchange grpcExchange() {
-      return new GrpcExchange();
-    }
 
     @Bean(name = "metaClientHandlers")
     public Collection<AbstractClientHandler> metaClientHandlers() {

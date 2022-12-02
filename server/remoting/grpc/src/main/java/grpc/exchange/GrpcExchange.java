@@ -82,10 +82,6 @@ public class GrpcExchange implements Exchange<ChannelHandler> {
 
   @Override
   public Server getServer(Integer port) {
-    return null;
-  }
-
-  private Channel getInternalChannel(ServerCall serverCall) {
-    return null;
+    return serverMap.get(port);
   }
 }

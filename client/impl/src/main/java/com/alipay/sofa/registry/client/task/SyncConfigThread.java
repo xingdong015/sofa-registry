@@ -72,6 +72,7 @@ public class SyncConfigThread extends Thread {
         SyncConfigRequest request = new SyncConfigRequest();
         request.setDataCenter(config.getDataCenter());
         request.setZone(config.getZone());
+        //todo 同步协议实现
         Object result = client.invokeSync(request);
 
         if (!(result instanceof SyncConfigResponse)) {

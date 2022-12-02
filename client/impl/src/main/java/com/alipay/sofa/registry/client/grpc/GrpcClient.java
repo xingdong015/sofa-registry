@@ -254,9 +254,7 @@ public class GrpcClient implements Client {
     @Override
     public Object invokeSync(Object request) {
         Payload          payload = currentConnection.request(request, 100);
-        RegisterResponse response = new RegisterResponse();
-        response.setSuccess(true);
-        return response;
+        return GrpcUtils.parse(payload);
     }
 
     public void setWorker(WorkerThread worker) {
