@@ -37,19 +37,8 @@ public class GrpcClient implements Client {
     private              RegisterCache                    registerCache;
     protected volatile   GrpcConnection                   currentConnection;
     private              Worker                           worker;
-    private              ScheduledExecutorService         clientEventExecutor;
-    private              ServerNode                       serverNode;
     private static final int                              RETRY_TIMES                      = 3;
     protected volatile   AtomicReference<RpcClientStatus> rpcClientStatus                  = new AtomicReference<>(RpcClientStatus.WAIT_INIT);
-    private static final long                             DEFAULT_MAX_INBOUND_MESSAGE_SIZE = 10 * 1024 * 1024L;
-
-    private static final long DEFAULT_KEEP_ALIVE_TIME = 6 * 60 * 1000;
-
-    /**
-     * handlers to process server push request.
-     */
-    protected Map<Class, ServerRequestHandler> serverRequestHandlers = new HashMap<>();
-
 
     /**
      * Instantiates a new Client connection.

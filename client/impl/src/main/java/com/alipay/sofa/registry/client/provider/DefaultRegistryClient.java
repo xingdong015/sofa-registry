@@ -220,8 +220,8 @@ public class DefaultRegistryClient implements RegistryClient {
     }
 
     // init client connection and register worker
+    // todo factory facade proxy delegate refactor
     if (connectionType == ConnectionType.BOLT){
-      // todo factory facade proxy delegate refactor
       ClientConnection client = new ClientConnection(
               serverManager,
               userProcessorList,
@@ -231,12 +231,16 @@ public class DefaultRegistryClient implements RegistryClient {
       workerThread = new WorkerThread(client, registryClientConfig, registerCache);
       client.setWorker(workerThread);
       this.client = client;
-    } else {
-      GrpcClient client = new GrpcClient(serverManager, registerCache, registryClientConfig);
-      workerThread = new WorkerThread(client, registryClientConfig, registerCache);
-      client.setWorker(workerThread);
-      this.client = client;
+    } else{
+      GrpcClient grpcClient = new GrpcClient(
+              serverManager,
+              registerCache,
+              registryClientConfig);
+      workerThread = new WorkerThread(grpcClient, registryClientConfig, registerCache);
+      grpcClient.setWorker(workerThread);
+      this.client = grpcClient;
     }
+    //init
     client.init();
     // init registry check thread
     new RegistryCheckThread().start();
