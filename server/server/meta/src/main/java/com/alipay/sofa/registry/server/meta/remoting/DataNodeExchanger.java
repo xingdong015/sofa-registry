@@ -46,9 +46,4 @@ public class DataNodeExchanger extends ServerSideExchanger {
     return this;
   }
 
-  @VisibleForTesting
-  public DataNodeExchanger setBoltExchange(Exchange boltExchange) {
-    this.boltExchange = boltExchange;
-    return this;
-  }
 }

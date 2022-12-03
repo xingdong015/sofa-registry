@@ -32,7 +32,6 @@ import com.alipay.sofa.registry.server.session.acceptor.ClientOffWriteDataReques
 import com.alipay.sofa.registry.server.session.acceptor.PublisherWriteDataRequest;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataAcceptor;
 import com.alipay.sofa.registry.server.session.acceptor.WriteDataRequest;
-import com.alipay.sofa.registry.server.session.bootstrap.ExchangeManager;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
 import com.alipay.sofa.registry.server.session.loggers.Loggers;
 import com.alipay.sofa.registry.server.session.node.service.DataNodeService;
@@ -48,6 +47,7 @@ import com.alipay.sofa.registry.server.session.strategy.SessionRegistryStrategy;
 import com.alipay.sofa.registry.server.session.wrapper.RegisterInvokeData;
 import com.alipay.sofa.registry.server.session.wrapper.WrapperInterceptorManager;
 import com.alipay.sofa.registry.server.shared.env.ServerEnv;
+import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
 import com.alipay.sofa.registry.util.ConcurrentUtils;
 import com.alipay.sofa.registry.util.LoopRunnable;
 import com.alipay.sofa.registry.util.StringFormatter;

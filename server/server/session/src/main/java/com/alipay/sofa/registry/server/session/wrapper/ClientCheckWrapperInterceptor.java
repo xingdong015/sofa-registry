@@ -22,8 +22,8 @@ import com.alipay.sofa.registry.common.model.wrapper.WrapperInvocation;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Server;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
-import com.alipay.sofa.registry.server.session.bootstrap.ExchangeManager;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
+import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

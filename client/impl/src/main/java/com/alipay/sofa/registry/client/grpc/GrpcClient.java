@@ -1,17 +1,21 @@
 package com.alipay.sofa.registry.client.grpc;
 
+import com.alipay.sofa.registry.client.api.Configurator;
+import com.alipay.sofa.registry.client.api.Publisher;
 import com.alipay.sofa.registry.client.api.RegistryClientConfig;
+import com.alipay.sofa.registry.client.api.Subscriber;
 import com.alipay.sofa.registry.client.constants.RpcClientStatus;
 import com.alipay.sofa.registry.client.log.LoggerFactory;
 import com.alipay.sofa.registry.client.provider.RegisterCache;
 import com.alipay.sofa.registry.client.remoting.Client;
 import com.alipay.sofa.registry.client.remoting.ServerManager;
 import com.alipay.sofa.registry.client.remoting.ServerNode;
+import com.alipay.sofa.registry.client.task.TaskEvent;
 import com.alipay.sofa.registry.client.task.Worker;
 import com.alipay.sofa.registry.client.task.WorkerThread;
 import com.alipay.sofa.registry.core.grpc.*;
-import com.alipay.sofa.registry.core.model.RegisterResponse;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
@@ -21,7 +25,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 
 import java.util.*;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -31,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GrpcClient implements Client {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
+
+    private static final int RECONNECTING_DELAY = 5000;
 
     private              ServerManager                    serverManager;
     private              RegistryClientConfig             config;
@@ -139,15 +144,76 @@ public class GrpcClient implements Client {
      * @return
      */
     public boolean connect() {
+        Random           random      = new Random();
+        GrpcConnection       connection  = null;
         List<ServerNode> serverNodes = new ArrayList<>(serverManager.getServerList());
+        // shuffle server list to make server connections as discrete as possible
+        Collections.shuffle(serverNodes);
         for (ServerNode serverNode : serverNodes) {
-            GrpcConnection connectToServer = connectToServer(serverNode);
-            if (null != connectToServer && connectToServer.isFine()) {
-                this.currentConnection = connectToServer;
-                return true;
+            try{
+                connection = connectToServer(serverNode);
+                if (null != connection && connection.isFine()) {
+                    resetRegister();
+                    LOGGER.info("[Grpc Connect] Successfully connected to server: {}", serverNode);
+                    break;
+                } else if (connection != null){
+                    //recycle connection
+                    connection.close();
+                }
+                Thread.sleep(random.nextInt(RECONNECTING_DELAY));
+            }catch (Exception e){
+                LOGGER.error("[Grpc Connect] Failed trying connect to {}", serverNode, e);
             }
         }
+        if (null != connection && connection.isFine()) {
+            currentConnection = connection;
+            return true;
+        }
         return false;
+    }
+
+    private void resetRegister() {
+        try {
+            List<TaskEvent> eventList = new ArrayList<>();
+
+            Collection<Publisher> publishers = registerCache.getAllPublishers();
+            for (Publisher publisher : publishers) {
+                try {
+                    publisher.reset();
+                    eventList.add(new TaskEvent(publisher));
+                } catch (Exception e) {
+                    LOGGER.error("[connection] Publisher reset error, {}", publisher, e);
+                }
+            }
+
+            Collection<Subscriber> subscribers = registerCache.getAllSubscribers();
+            for (Subscriber subscriber : subscribers) {
+                try {
+                    subscriber.reset();
+                    eventList.add(new TaskEvent(subscriber));
+                } catch (Exception e) {
+                    LOGGER.error("[connection] Subscriber reset error, {}", subscriber, e);
+                }
+            }
+
+            Collection<Configurator> configurators = registerCache.getAllConfigurator();
+            for (Configurator configurator : configurators) {
+                try {
+                    configurator.reset();
+                    eventList.add(new TaskEvent(configurator));
+                } catch (Exception e) {
+                    LOGGER.error("[connection] Configurator reset error, {}", configurator, e);
+                }
+            }
+
+            worker.schedule(eventList);
+            LOGGER.info(
+                    "[reset] {} publishers and {} subscribers has been reset",
+                    publishers.size(),
+                    subscribers.size());
+        } catch (Exception e) {
+            LOGGER.error("[reset] Reset register after reconnect error", e);
+        }
     }
 
     private GrpcConnection connectToServer(ServerNode serverNode) {

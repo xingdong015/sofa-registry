@@ -20,7 +20,6 @@ import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Client;
 import com.alipay.sofa.registry.remoting.Server;
-import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.NodeExchanger;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
 import com.alipay.sofa.registry.remoting.exchange.RequestException;
@@ -36,7 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public abstract class ServerSideExchanger implements NodeExchanger {
 
-  @Autowired protected Exchange boltExchange;
+  @Autowired
+  private ExchangeManager exchangeManager;
 
   @Override
   public Response request(Request request) throws RequestException {
@@ -48,8 +48,10 @@ public abstract class ServerSideExchanger implements NodeExchanger {
   }
 
   public Response request(URL url, Request request) throws RequestException {
-    final Server server = boltExchange.getServer(getServerPort());
+
+    final Server server = exchangeManager.getSessionExchange().getServer(getServerPort());
     if (server == null) {
+      //todo 如果开启grpc协议的话、这块是否需要使用 grpc 推送
       throw new RequestException("no server for " + url + "," + getServerPort(), request);
     }
     final int timeout = request.getTimeout() != null ? request.getTimeout() : getRpcTimeoutMillis();

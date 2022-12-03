@@ -1,4 +1,4 @@
-package com.alipay.sofa.registry.server.session.bootstrap;
+package com.alipay.sofa.registry.server.shared.remoting;
 
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -284,6 +284,7 @@ public class FirePushService {
     }
   }
 
+  //服务端推送的过程、推送链接地址的过程。
   boolean doExecuteOnReg(String dataInfoId, List<Subscriber> subscribers) {
     // TODO multi datacenter
     final String dataCenter = sessionServerConfig.getSessionServerDataCenter();

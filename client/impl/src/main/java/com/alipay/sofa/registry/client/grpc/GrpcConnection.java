@@ -105,4 +105,22 @@ public class GrpcConnection {
         Payload convert = GrpcUtils.convert(response);
         payloadStreamObserver.onNext(convert);
     }
+
+    public void close() {
+        if (this.payloadStreamObserver != null) {
+            try {
+                payloadStreamObserver.onCompleted();
+            } catch (Throwable throwable) {
+                //ignore.
+            }
+        }
+
+        if (this.channel != null && !channel.isShutdown()) {
+            try {
+                this.channel.shutdownNow();
+            } catch (Throwable throwable) {
+                //ignore.
+            }
+        }
+    }
 }
