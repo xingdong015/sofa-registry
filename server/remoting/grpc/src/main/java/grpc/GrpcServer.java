@@ -39,6 +39,7 @@ import java.lang.reflect.ParameterizedType;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -205,6 +206,7 @@ public class GrpcServer implements Server {
 
     @Override
     public List<Channel> getChannels() {
+
         return null;
     }
 
@@ -225,7 +227,11 @@ public class GrpcServer implements Server {
 
     @Override
     public Channel getChannel(URL url) {
-        Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
+        Url key = new Url(url.getIpAddress(), url.getPort());
+        Connection connection = connectionManager.getConnectionByKey(key.getUniqueKey() );
+        if (Objects.isNull(connection)){
+            return null;
+        }
         return new GrpcChannel(connection);
     }
 

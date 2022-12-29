@@ -1,5 +1,6 @@
 package com.alipay.sofa.registry.server.shared.remoting;
 
+import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,20 +18,7 @@ public class ExchangeManager {
     @Autowired
     private Exchange grpcExchange;
 
-    private Map<String, Exchange> exchangeMap = new HashMap<>();
-
-    private String currentExchangeName;
-
-    @PostConstruct
-    public void init(){
-        currentExchangeName = "grpc";
-        exchangeMap.put("grpc",grpcExchange);
-        exchangeMap.put("bolt",boltExchange);
+    public Exchange getExchangeByPrototype(URL.ProtocolType protocolType){
+        return protocolType == URL.ProtocolType.BOLT ? boltExchange : grpcExchange;
     }
-
-
-    public Exchange getSessionExchange() {
-        return exchangeMap.get(currentExchangeName);
-    }
-
 }

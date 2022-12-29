@@ -16,9 +16,11 @@
  */
 package grpc;
 
+import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.exception.SofaRegistryRuntimeException;
 import com.alipay.sofa.registry.net.NetUtil;
 import com.alipay.sofa.registry.remoting.Channel;
+import com.alipay.sofa.registry.remoting.Protocol;
 import com.alipay.sofa.registry.util.StringFormatter;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -96,6 +98,21 @@ public class GrpcChannel implements Channel {
   @Override
   public void close() {
     this.connection.close();
+  }
+
+  @Override
+  public Protocol protocol() {
+    return Protocol.GRPC;
+  }
+
+  @Override
+  public URL.ProtocolType getProtocolType() {
+    return URL.ProtocolType.GRPC;
+  }
+
+  @Override
+  public Byte getCustomSerializer() {
+    return URL.PROTOBUF;
   }
 
   @Override

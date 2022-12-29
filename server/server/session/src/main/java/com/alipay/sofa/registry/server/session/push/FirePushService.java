@@ -168,12 +168,14 @@ public class FirePushService {
 
   boolean doExecuteOnChange(String changeDataInfoId, TriggerPushContext changeCtx) {
     final long expectVersion = changeCtx.getExpectDatumVersion();
+    // 获取地址列表
     final SubDatum datum = getDatum(changeCtx.dataCenter, changeDataInfoId, expectVersion);
     if (datum == null) {
       // datum change, but get null datum, should not happen
       LOGGER.error("[changeNil] {},{},{}", changeCtx.dataCenter, changeDataInfoId, expectVersion);
       return false;
     }
+    // 判断版本号，获取到的最新版本号不应该比预期的小
     if (datum.getVersion() < expectVersion) {
       LOGGER.error(
           "[changeLessVer] {},{},{}<{}",
@@ -223,11 +225,13 @@ public class FirePushService {
     return true;
   }
 
+  // 获取地址列表
   SubDatum getDatum(String dataCenter, String dataInfoId, long expectVersion) {
     Key key = new Key(DatumKey.class.getName(), new DatumKey(dataInfoId, dataCenter));
     Value value = sessionCacheService.getValueIfPresent(key);
     if (value != null) {
       SubDatum datum = (SubDatum) value.getPayload();
+      // 缓存中的数据更新，以缓存中的数据为准
       if (datum != null && datum.getVersion() >= expectVersion) {
         // the expect version got
         CACHE_HIT_COUNTER.inc();
@@ -237,6 +241,7 @@ public class FirePushService {
     CACHE_MISS_COUNTER.inc();
     // the cache is too old
     sessionCacheService.invalidate(key);
+    // 获取并更新缓存
     value = sessionCacheService.getValue(key);
     return value == null ? null : (SubDatum) value.getPayload();
   }
@@ -284,7 +289,12 @@ public class FirePushService {
     }
   }
 
-  //服务端推送的过程、推送链接地址的过程。
+  // 通过 FirePushService#getDatum 方法从缓存中获取地址列表。该缓存使用 Guava Cache 的LoadingCache，
+  // 当缓存中没有 dataInfoId 的地址列表时，会自动从 data server 获取地址列表，并放在缓存中。
+  //通过 FirePushService#processPush 方法将地址列表推送给所有订阅者
+  //首先通过 firePush 方法将 PushTas k放入 buffer
+  //等待 PushTaskBuffer.BufferWorker 线程异步处理任务
+
   boolean doExecuteOnReg(String dataInfoId, List<Subscriber> subscribers) {
     // TODO multi datacenter
     final String dataCenter = sessionServerConfig.getSessionServerDataCenter();

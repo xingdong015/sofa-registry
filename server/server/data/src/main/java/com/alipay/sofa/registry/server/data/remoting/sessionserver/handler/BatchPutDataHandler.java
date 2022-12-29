@@ -79,6 +79,7 @@ public class BatchPutDataHandler extends AbstractDataHandler<BatchRequest> {
           Publisher publisher = (Publisher) req;
           DatumVersion updatedVersion = doHandle(publisher);
           if (updatedVersion != null) {
+            // // 存储成功就加入列表，用于生成DataChange事件
             changeDataInfoIds.add(publisher.getDataInfoId());
           }
           if (publisher instanceof UnPublisher) {
@@ -126,6 +127,9 @@ public class BatchPutDataHandler extends AbstractDataHandler<BatchRequest> {
     } finally {
       // if has exception, try to notify the req which was handled
       if (!changeDataInfoIds.isEmpty()) {
+        // 生成DataChange事件
+        // DataChangeEventCenter#onChange 方法将 dataInfoId 列表加到缓存 map 中，
+        // 每个数据中心对应一个 dataInfoId 列表，等待异步处理。
         dataChangeEventCenter.onChange(
             changeDataInfoIds, DataChangeType.PUT, dataServerConfig.getLocalDataCenter());
       }

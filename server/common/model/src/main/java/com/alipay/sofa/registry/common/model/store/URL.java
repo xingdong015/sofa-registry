@@ -53,7 +53,8 @@ public final class URL implements Serializable {
   public enum ProtocolType {
     TR,
     BOLT,
-    HTTP
+    HTTP,
+    GRPC
   }
 
   public URL() {}

@@ -17,6 +17,7 @@
 package com.alipay.sofa.registry.server.session.wrapper;
 
 import com.alipay.sofa.registry.common.model.store.BaseInfo;
+import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInterceptor;
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInvocation;
 import com.alipay.sofa.registry.remoting.Channel;
@@ -47,7 +48,9 @@ public class ClientCheckWrapperInterceptor
     RegisterInvokeData registerInvokeData = invocation.getParameterSupplier().get();
     BaseInfo baseInfo = (BaseInfo) registerInvokeData.getStoreData();
 
-    Server sessionServer = exchangeManager.getSessionExchange().getServer(sessionServerConfig.getServerPort());
+    URL    address = baseInfo.getSourceAddress();
+    URL.ProtocolType protocol = address.getProtocol();
+    Server sessionServer = exchangeManager.getExchangeByPrototype(protocol).getServer(sessionServerConfig.getServerPort());
 
     Channel channel = sessionServer.getChannel(baseInfo.getSourceAddress());
 

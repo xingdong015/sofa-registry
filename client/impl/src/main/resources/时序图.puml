@@ -1,0 +1,11 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+DefaultRegistryClient -> DefaultRegistryClient: init()
+DefaultRegistryClient --> DefaultRegistryClient:
+
+Alice -> Bob: Another authentication Request
+Alice <-- Bob: another authentication Response
+@enduml

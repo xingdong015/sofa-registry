@@ -103,6 +103,9 @@ public class SessionRegistry implements Registry {
   @Autowired protected FirePushService firePushService;
 
   @Autowired protected ConfigProvideDataWatcher configProvideDataWatcher;
+  //SessionServer 通过 SessionCacheService 缓存地址列表，避免频繁请求给 data server 造成较大压力，
+  // 影响存储稳定性；内部通过推拉结合的方式解决地址更新的问题，一方面通过数据变更通知 session server 更新地址列表，
+  // 另一方面通过 VersionWatchDog 定时扫描版本号，拉取 data server 变更的地址列表；
 
   private final VersionWatchDog versionWatchDog = new VersionWatchDog();
 
@@ -125,11 +128,13 @@ public class SessionRegistry implements Registry {
                   case PUBLISHER:
                     Publisher publisher = (Publisher) storeData;
                     publisher.setSessionProcessId(ServerEnv.PROCESS_ID);
+                    // 放入缓存
                     if (!sessionDataStore.add(publisher)) {
                       break;
                     }
                     // All write operations to DataServer (pub/unPub/clientoff/renew/snapshot)
                     // are handed over to WriteDataAcceptor
+                    // 存入data服务器中
                     writeDataAcceptor.accept(
                         new PublisherWriteDataRequest(
                             publisher, WriteDataRequest.WriteDataRequestType.PUBLISHER));
@@ -605,7 +610,8 @@ public class SessionRegistry implements Registry {
   }
 
   public void cleanClientConnect() {
-    Server sessionServer = exchangeManager.getSessionExchange().getServer(sessionServerConfig.getServerPort());
+
+    Server sessionServer = exchangeManager.getExchangeByPrototype(URL.ProtocolType.BOLT).getServer(sessionServerConfig.getServerPort());
     if (sessionServer == null) {
       LOGGER.warn("server not init when clean connect: {}", sessionServerConfig.getServerPort());
       return;

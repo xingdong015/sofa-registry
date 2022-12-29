@@ -36,6 +36,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.core.async.Hack;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.InetSocketAddress;
+
 /**
  * @author xuanbei
  * @since 2019/2/15
@@ -80,8 +82,13 @@ public class DefaultSubscriberHandlerStrategy implements SubscriberHandlerStrate
       SubscriberRegister subscriberRegister,
       RegisterResponse registerResponse,
       boolean pb) {
-    subscriber.setSourceAddress(
-        new URL(channel.getRemoteAddress(), BoltUtil.getBoltCustomSerializer(channel)));
+    //这块给 subscriber 的 sourceAddress 设置了 bolt 协议。
+    //todo 适配 grpc 协议
+    InetSocketAddress address = channel.getRemoteAddress();
+    subscriber.setSourceAddress(new URL(channel.getProtocolType(),
+            address.getAddress().getHostAddress(),
+            address.getPort(),
+            channel.getCustomSerializer()));
     subscriber.setTargetAddress(new URL(channel.getLocalAddress()));
 
     final String eventType = subscriberRegister.getEventType();

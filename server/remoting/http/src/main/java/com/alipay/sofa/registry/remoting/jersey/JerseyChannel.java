@@ -16,8 +16,11 @@
  */
 package com.alipay.sofa.registry.remoting.jersey;
 
+import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.net.NetUtil;
 import com.alipay.sofa.registry.remoting.Channel;
+import com.alipay.sofa.registry.remoting.Protocol;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import javax.ws.rs.client.Client;
@@ -86,5 +89,15 @@ public class JerseyChannel implements Channel {
   @Override
   public void close() {
     client.close();
+  }
+
+  @Override
+  public Protocol protocol() {
+    return Protocol.HTTP;
+  }
+
+  @Override
+  public URL.ProtocolType getProtocolType() {
+    return URL.ProtocolType.HTTP;
   }
 }

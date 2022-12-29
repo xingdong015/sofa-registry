@@ -18,8 +18,10 @@ package com.alipay.sofa.registry.remoting.bolt;
 
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.Connection;
+import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.exception.SofaRegistryRuntimeException;
 import com.alipay.sofa.registry.remoting.Channel;
+import com.alipay.sofa.registry.remoting.Protocol;
 import com.alipay.sofa.registry.util.StringFormatter;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -104,6 +106,21 @@ public class BoltChannel implements Channel {
   @Override
   public void close() {
     this.connection.close();
+  }
+
+  @Override
+  public Protocol protocol() {
+    return Protocol.BOLT;
+  }
+
+  @Override
+  public URL.ProtocolType getProtocolType() {
+    return URL.ProtocolType.BOLT;
+  }
+
+  @Override
+  public Byte getCustomSerializer() {
+    return BoltUtil.getBoltCustomSerializer(this);
   }
 
   /**

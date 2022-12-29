@@ -53,7 +53,10 @@ public final class RegProcessor {
 
   boolean fireOnReg(Subscriber subscriber) {
     final String dataInfoId = subscriber.getDataInfoId();
+    // 从若干个BufferWorker数组找到其中一个
     BufferWorker worker = indexOf(subscriber.getDataInfoId());
+    // 将dataInfoId和subscriber存到BufferWorker线程中的subMap中
+    // subMap的key为dataInfoId，value为SubBuffer
     SubBuffer buffer = worker.subMap.computeIfAbsent(dataInfoId, k -> new SubBuffer());
     return buffer.add(subscriber);
   }
@@ -117,13 +120,16 @@ public final class RegProcessor {
     List<Subscriber> subscribers = Lists.newArrayListWithCapacity(hitSize);
     for (Map.Entry<String, Subscriber> e : ref.subscriberMap.entrySet()) {
       final Subscriber sub = e.getValue();
+      // 若订阅者已经推送过，直接忽略
       if (!sub.hasPushed()) {
         subscribers.add(sub);
       }
+      // 这里因为subscriberMap是引用，没有锁保护，所以sub可能已经被新的subscriber替换掉
       // try to remove the sub, but subs maybe changes
       ref.subscriberMap.remove(sub.getRegisterId(), sub);
     }
     if (!subscribers.isEmpty()) {
+      // 从缓存中获取dataInfoId的地址列表，并推送给subscribers
       regHandler.onReg(ref.dataInfoId, subscribers);
     }
     return subscribers.size();
@@ -168,6 +174,9 @@ public final class RegProcessor {
       }
       return ret;
     }
+    //BufferWorker 线程循环处理 map 缓存中的订阅注册任务，处理流程：
+    //从 worker 的 subMap 取出所有 dataInfoId 和订阅者列表，并对每个 dataInfoId 分别处理
+    //通过 RegProcessor#processBuffer 方法处理每个 dataInfoId 和对应的订阅者
 
     int watchBuffer() {
       final List<Ref> refs = getAndResetBuffer();

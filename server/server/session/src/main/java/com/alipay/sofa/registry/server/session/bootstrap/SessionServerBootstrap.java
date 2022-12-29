@@ -217,7 +217,7 @@ public class SessionServerBootstrap {
             configProvideDataWatcher.start();
             registerSerializer();
             openConsoleServer();
-//      openSessionServer();
+            openSessionServer();
             openGrpcSessionServer();
 
             TaskMetrics.getInstance().registerBolt();

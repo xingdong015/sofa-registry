@@ -36,7 +36,7 @@ public final class PushTaskBuffer {
   private static final String KEY_MAX_BUFFERED_SIZE = "registry.session.push_task.max_buffered";
   private static final int MAX_BUFFERED_SIZE =
       SystemUtils.getSystemInteger(KEY_MAX_BUFFERED_SIZE, 10000);
-
+  // PushProcessor 初始化时默认创建 4 个 PushTaskBuffer.BufferWorker 线程；
   final BufferWorker[] workers;
 
   PushTaskBuffer(int workerSize) {
@@ -138,16 +138,18 @@ public final class PushTaskBuffer {
       return pending;
     }
   }
+  //BufferWorker 线程循环执行 watchBuffer 方法，将 worker 中缓存的过期任务删除后进行处理，具体逻辑见下边源码
 
   int watchBuffer(BufferWorker worker) {
     int bufferedSize = worker.bufferMap.size();
     if (bufferedSize >= MAX_BUFFERED_SIZE) {
       LOGGER.warn("arrived max buffered size: buffered={}", bufferedSize);
     }
-
+    // 获取推送任务
     List<PushTask> pending = worker.transferAndMerge();
     int count = 0;
     for (PushTask task : pending) {
+      // 将任务放进线程池执行
       if (task.commit()) {
         count++;
       }

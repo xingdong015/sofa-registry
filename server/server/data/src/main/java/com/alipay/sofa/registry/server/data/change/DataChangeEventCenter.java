@@ -356,11 +356,13 @@ public class DataChangeEventCenter {
       LOGGER.error("session conn is empty when change");
       return false;
     }
+    // for循环遍历处理所有events
     for (DataChangeEvent event : events) {
       final Map<String, DatumVersion> changes =
           Maps.newHashMapWithExpectedSize(event.getDataInfoIds().size());
       final String dataCenter = event.getDataCenter();
       for (String dataInfoId : event.getDataInfoIds()) {
+        // 获取最新版本号
         DatumVersion datumVersion = datumCache.getVersion(dataCenter, dataInfoId);
         if (datumVersion != null) {
           changes.put(dataInfoId, datumVersion);
@@ -373,8 +375,11 @@ public class DataChangeEventCenter {
         LOGGER.info("datum change notify: {},{}", entry.getKey(), entry.getValue());
       }
       for (Map.Entry<String, List<Channel>> entry : channelsMap.entrySet()) {
+        // 随机获取一个session server 推送数据变更通知
         Channel channel = CollectionUtils.getRandom(entry.getValue());
         try {
+          // 放入线程池中执行
+          // session server 收到数据变更通知，由 DataChangeRequestHandler#doHandle 方法处理；
           notifyExecutor.execute(
               channel.getRemoteAddress(),
               new ChangeNotifier(channel, event.getDataCenter(), changes, event.getTraceTimes()));
@@ -433,7 +438,7 @@ public class DataChangeEventCenter {
     }
     return events;
   }
-
+  //dataServer 启动时创建了一个 DataChangeEventCenter.ChangeMerger 线程，用于处理数据变更通知的缓存；
   private final class ChangeMerger extends LoopRunnable {
 
     @Override

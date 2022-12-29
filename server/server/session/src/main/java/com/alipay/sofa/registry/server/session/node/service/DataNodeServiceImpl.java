@@ -97,6 +97,8 @@ public class DataNodeServiceImpl implements DataNodeService {
   private void commitReq(int slotId, Req req) {
     int idx = slotId % blockingQueues.queueNum();
     try {
+      // 由于服务发布的数据最终要写入 data server，这里首先通过
+      // DataNodeService#register 方法放到阻塞队列中异步处理；
       blockingQueues.put(idx, req);
     } catch (FastRejectedExecutionException e) {
       throw new FastRejectedExecutionException(
@@ -359,9 +361,11 @@ public class DataNodeServiceImpl implements DataNodeService {
     public void run() {
       for (; ; ) {
         try {
+          // 从队列中取出第一个
           final Req firstReq = queue.poll(200, TimeUnit.MILLISECONDS);
           if (firstReq != null) {
             // TODO config max
+            // 批量获取请求,默认最多取100个
             Map<Integer, LinkedList<Object>> reqs =
                 drainReq(queue, sessionServerConfig.getDataNodeMaxBatchSize());
             // send by order, firstReq.slotId is the first one
@@ -372,10 +376,12 @@ public class DataNodeServiceImpl implements DataNodeService {
             firstBatch.addFirst(firstReq.req);
             request(firstReq.slotId, firstBatch);
             for (Map.Entry<Integer, LinkedList<Object>> batch : reqs.entrySet()) {
+              // 批量发起请求
               request(batch.getKey(), batch.getValue());
             }
           }
           // check the retry
+          // 重试逻辑
           if (!retryBatches.isEmpty()) {
             final Iterator<RetryBatch> it = retryBatches.iterator();
             List<RetryBatch> retries = Lists.newArrayList();

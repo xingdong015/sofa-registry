@@ -84,6 +84,7 @@ public class DataChangeRequestHandler extends AbstractClientHandler<DataChangeRe
     for (Map.Entry<String, DatumVersion> e : dataChangeRequest.getDataInfoIds().entrySet()) {
       final String dataInfoId = e.getKey();
       final DatumVersion version = e.getValue();
+      // 判断版本号，忽略旧版本数据
       Interests.InterestVersionCheck check =
           sessionInterests.checkInterestVersion(dataCenter, dataInfoId, version.getValue());
       if (!check.interested) {
@@ -100,6 +101,7 @@ public class DataChangeRequestHandler extends AbstractClientHandler<DataChangeRe
               dataNode,
               changeTimestamp,
               dataChangeRequest.getTimes());
+      // 加入缓存map
       firePushService.fireOnChange(dataInfoId, changeCtx);
     }
     return null;

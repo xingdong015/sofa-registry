@@ -16,9 +16,16 @@
  */
 package grpc;
 
+import com.alipay.remoting.Url;
 import com.alipay.sofa.registry.log.Logger;
 import com.alipay.sofa.registry.log.LoggerFactory;
+import org.apache.commons.collections.CollectionUtils;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,6 +78,29 @@ public class ConnectionManager {
    */
   public Connection getConnection(String connectionId) {
     return connections.get(connectionId);
+  }
+
+  public Connection getConnectionByKey(String uniqueKey){
+    final List<Connection> connectionList = new ArrayList<>();
+    connections.forEach((s, connection) -> {
+      InetSocketAddress remoteAddress = connection.getRemoteAddress();
+      InetAddress       address       = remoteAddress.getAddress();
+      String            hostAddress   = address.getHostAddress();
+      int port = remoteAddress.getPort();
+      Url key  = new Url(hostAddress, port);
+      if (key.getUniqueKey().equals(uniqueKey)){
+        connectionList.add(connection);
+      }
+    });
+
+    if (CollectionUtils.isEmpty(connectionList)){
+      return null;
+    }
+    List<Connection> snapshot = new ArrayList<Connection>(connectionList);
+
+    return snapshot.get(0);
+
+
   }
 
   /**
