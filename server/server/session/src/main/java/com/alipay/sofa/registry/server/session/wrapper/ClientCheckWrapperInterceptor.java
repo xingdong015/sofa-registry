@@ -22,6 +22,7 @@ import com.alipay.sofa.registry.common.model.wrapper.WrapperInterceptor;
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInvocation;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Server;
+import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
 import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
@@ -39,6 +40,7 @@ public class ClientCheckWrapperInterceptor
   @Autowired private SessionServerConfig sessionServerConfig;
 
   @Autowired private ExchangeManager exchangeManager;
+
 
 
   @Override

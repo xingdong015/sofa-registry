@@ -206,7 +206,6 @@ public class SessionServerConfiguration {
       list.add(subscriberHandler());
       list.add(serverCheckHandler());
       list.add(syncConfigHandler());
-      list.add(subscriberHandler());
       return list;
     }
 
@@ -225,7 +224,6 @@ public class SessionServerConfiguration {
       list.add(serviceAppMappingHandler());
       list.add(metaRevisionHeartbeatHandler());
       list.add(getRevisionHandler());
-
       return list;
     }
 

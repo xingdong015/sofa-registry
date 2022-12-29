@@ -184,18 +184,18 @@ public class SessionServerBootstrap {
             initEnvironment();
             ReporterUtils.enablePrometheusDefaultExports();
 
-            openSessionSyncServer();
+            openSessionSyncServer();//不动
 
             startupRetryer.call(
                     () -> {
-                        connectMetaServer();
+                        connectMetaServer();//不动
                         return true;
                     });
 
             // wait until slot table is get
             startupRetryer.call(
                     () -> slotTableCache.getCurrentSlotTable().getEpoch() != SlotTable.INIT.getEpoch());
-
+            //todo
             recoverConfigRepository.waitSynced();
             metadataCacheRegistry.waitSynced();
             clientManagerAddressRepository.waitSynced();
@@ -205,11 +205,11 @@ public class SessionServerBootstrap {
 
             startScheduler();
 
-            openHttpServer();
+            openHttpServer();//http 服务 心跳检测。todo
 
             startupRetryer.call(
                     () -> {
-                        connectDataServer();
+                        connectDataServer();//bolt 不动
                         return true;
                     });
 
@@ -217,6 +217,7 @@ public class SessionServerBootstrap {
             configProvideDataWatcher.start();
             registerSerializer();
             openConsoleServer();
+            openConsoleServer();//不动
             openSessionServer();
             openGrpcSessionServer();
 
