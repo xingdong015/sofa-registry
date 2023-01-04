@@ -608,7 +608,7 @@ public class SessionRegistry implements Registry {
         });
     return result;
   }
-
+//自动断链 https://www.sofastack.tech/blog/sofa-rpc-connection-management-heartbeat-analysis/
   public void cleanClientConnect() {
 
     Server sessionServer = exchangeManager.getExchangeByPrototype(URL.ProtocolType.BOLT).getServer(sessionServerConfig.getServerPort());

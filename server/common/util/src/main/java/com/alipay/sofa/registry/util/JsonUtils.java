@@ -18,8 +18,6 @@ package com.alipay.sofa.registry.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * @author yuzhi.lyz
@@ -42,7 +40,6 @@ public final class JsonUtils {
       throw new RuntimeException("failed to read json to " + clazz.getName() + ", " + str, e);
     }
   }
-
 
   public static <T> T read(String str, TypeReference<T> typeReference) {
     try {

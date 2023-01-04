@@ -62,9 +62,9 @@ public interface MetadataOrBuilder
 
   /* nullable */
   String getHeadersOrDefault(
-          String key,
-          /* nullable */
-          String defaultValue);
+      String key,
+      /* nullable */
+      String defaultValue);
   /** <code>map&lt;string, string&gt; headers = 7;</code> */
   String getHeadersOrThrow(String key);
 }

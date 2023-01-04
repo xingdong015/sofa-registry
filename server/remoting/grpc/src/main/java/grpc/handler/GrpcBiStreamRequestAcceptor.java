@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package grpc;
+package grpc.handler;
 
 import static grpc.GrpcServer.*;
 
@@ -22,6 +22,10 @@ import com.alipay.sofa.registry.core.grpc.BiRequestStreamGrpc;
 import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
 import com.alipay.sofa.registry.core.grpc.Payload;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
+import grpc.Connection;
+import grpc.ConnectionManager;
+import grpc.GrpcConnection;
+import grpc.RequestHandlerRegistry;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
@@ -34,7 +38,7 @@ import org.slf4j.LoggerFactory;
 public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestStreamImplBase {
     public static final Logger                 LOGGER = LoggerFactory.getLogger(GrpcBiStreamRequestAcceptor.class);
 
-    private final       RequestHandlerRegistry requestHandlerRegistry;
+    private final RequestHandlerRegistry requestHandlerRegistry;
 
     private final ConnectionManager connectionManager;
 
@@ -90,21 +94,26 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
 
             @Override
             public void onError(Throwable t) {
+                // End the response stream if the client presents an error.
                 LOGGER.error("requestBiStream error",t);
+                responseObserver.onCompleted();
             }
 
             @Override
             public void onCompleted() {
+                // Signal the end of work when the client ends the request stream.
                 if (responseObserver instanceof ServerCallStreamObserver) {
                     ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
                     if (serverCallStreamObserver.isCancelled()) {
                         // client close the stream.
+                        serverCallStreamObserver.onCompleted();
                     } else {
                         try {
                             // 结束服务器端的调用
                             serverCallStreamObserver.onCompleted();
                         } catch (Throwable throwable) {
                             // ignore
+                            serverCallStreamObserver.onError(throwable);
                         }
                     }
                 }

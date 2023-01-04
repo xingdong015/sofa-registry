@@ -33,9 +33,9 @@ public abstract class Request implements com.google.protobuf.Service {
      * <code>rpc request(.Payload) returns (.Payload);</code>
      */
     public abstract void request(
-            com.google.protobuf.RpcController controller,
-            Payload request,
-            com.google.protobuf.RpcCallback<Payload> done);
+        com.google.protobuf.RpcController controller,
+        Payload request,
+        com.google.protobuf.RpcCallback<Payload> done);
   }
 
   public static com.google.protobuf.Service newReflectiveService(final Interface impl) {

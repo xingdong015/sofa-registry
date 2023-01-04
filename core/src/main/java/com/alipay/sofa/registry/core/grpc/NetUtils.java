@@ -16,9 +16,7 @@
  */
 package com.alipay.sofa.registry.core.grpc;
 
-
 import io.grpc.netty.shaded.io.netty.util.internal.StringUtil;
-
 import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;

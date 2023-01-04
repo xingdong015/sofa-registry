@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package grpc;
+package grpc.handler;
 
 import static grpc.GrpcServer.CONTEXT_KEY_CONN_ID;
 
@@ -23,7 +23,10 @@ import com.alipay.sofa.registry.core.grpc.RequestGrpc;
 import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
 import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
-import com.alipay.sofa.registry.server.shared.remoting.AbstractServerHandler;
+import grpc.Connection;
+import grpc.ConnectionManager;
+import grpc.GrpcUserProcessorAdapter;
+import grpc.RequestHandlerRegistry;
 import io.grpc.stub.StreamObserver;
 
 /**
@@ -53,12 +56,10 @@ public class GrpcCommonRequestAcceptor extends RequestGrpc.RequestImplBase {
       responseObserver.onCompleted();
       return;
     }
-    Object parseObj = GrpcUtils.parse(grpcRequest);
-    AbstractServerHandler requestHandler = (AbstractServerHandler) requestHandlerRegistry.getByRequestType(requestType);
-    Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
-    connectionManager.refreshActiveTime(CONTEXT_KEY_CONN_ID.get());
-    // 模仿 AsyncUserProcessorAdapter.java 自己创建 GrpcChannel 添加封装
-    Object response = requestHandler.doHandle(new GrpcChannel(connection), parseObj);
+    Object                   parseObj                 = GrpcUtils.parse(grpcRequest);
+    GrpcUserProcessorAdapter grpcUserProcessorAdapter = requestHandlerRegistry.getByRequestType(requestType);
+    Connection               connection               = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
+    Object response = grpcUserProcessorAdapter.handleRequest(connection,parseObj);
     Payload payloadResponse = GrpcUtils.convert(response);
     responseObserver.onNext(payloadResponse);
     responseObserver.onCompleted();

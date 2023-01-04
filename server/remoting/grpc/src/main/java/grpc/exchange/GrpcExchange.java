@@ -22,8 +22,7 @@ import com.alipay.sofa.registry.remoting.Client;
 import com.alipay.sofa.registry.remoting.Server;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import grpc.GrpcServer;
-import io.grpc.ServerCall;
-import io.grpc.netty.shaded.io.netty.channel.Channel;
+
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 

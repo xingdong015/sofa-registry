@@ -47,8 +47,6 @@ public abstract class Connection {
   /** create time. */
   Date createTime;
 
-  /** lastActiveTime. */
-  long lastActiveTime;
 
   protected Map<String, String> attributes = new HashMap<>();
 
@@ -75,7 +73,6 @@ public abstract class Connection {
     this.remotePort = remotePort;
     this.localPort = localPort;
     this.createTime = new Date();
-    this.lastActiveTime = System.currentTimeMillis();
     this.attributes.putAll(attributes);
   }
 
@@ -92,11 +89,6 @@ public abstract class Connection {
    * @return
    */
   public abstract void close();
-
-  /** Update last Active Time to now. */
-  public void freshActiveTime() {
-    this.lastActiveTime = System.currentTimeMillis();
-  }
 
   public InetSocketAddress getRemoteAddress() {
     return new InetSocketAddress(remoteIp, remotePort);
@@ -127,8 +119,6 @@ public abstract class Connection {
         + '\''
         + ", createTime="
         + createTime
-        + ", lastActiveTime="
-        + lastActiveTime
         + ", attributes="
         + attributes
         + '}';

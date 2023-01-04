@@ -23,10 +23,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,6 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2022/11/20
  */
 public class ConnectionManager {
+  private static final int    MAX_TIMES = 5;
+  private final        Random random    = new Random();
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
 
@@ -82,37 +81,32 @@ public class ConnectionManager {
 
   public Connection getConnectionByKey(String uniqueKey){
     final List<Connection> connectionList = new ArrayList<>();
-    connections.forEach((s, connection) -> {
+    for (Map.Entry<String, Connection> entry : connections.entrySet()) {
+      Connection        connection    = entry.getValue();
       InetSocketAddress remoteAddress = connection.getRemoteAddress();
       InetAddress       address       = remoteAddress.getAddress();
       String            hostAddress   = address.getHostAddress();
-      int port = remoteAddress.getPort();
-      Url key  = new Url(hostAddress, port);
-      if (key.getUniqueKey().equals(uniqueKey)){
+      int               port          = remoteAddress.getPort();
+      Url               key           = new Url(hostAddress, port);
+      if (key.getUniqueKey().equals(uniqueKey)) {
         connectionList.add(connection);
       }
-    });
+    }
 
-    if (CollectionUtils.isEmpty(connectionList)){
+    if (null == connectionList || connectionList.isEmpty()) {
       return null;
     }
-    List<Connection> snapshot = new ArrayList<Connection>(connectionList);
-
-    return snapshot.get(0);
-
-
-  }
-
-  /**
-   * regresh connection active time.
-   *
-   * @param connectionId connectionId.
-   */
-  public void refreshActiveTime(String connectionId) {
-    Connection connection = connections.get(connectionId);
-    if (connection != null) {
-      connection.freshActiveTime();
+    int size = connections.size();
+    int tries = 0;
+    Connection result = null;
+    while ((result == null || !result.isConnected()) && tries++ < MAX_TIMES) {
+      result = connectionList.get(this.random.nextInt(size));
     }
+
+    if (result != null && !result.isConnected()) {
+      result = null;
+    }
+    return result;
   }
 
   /**

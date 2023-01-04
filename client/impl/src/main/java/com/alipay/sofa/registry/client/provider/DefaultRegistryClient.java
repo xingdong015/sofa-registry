@@ -36,11 +36,11 @@ import com.alipay.sofa.registry.client.api.registration.PublisherRegistration;
 import com.alipay.sofa.registry.client.api.registration.SubscriberRegistration;
 import com.alipay.sofa.registry.client.auth.AuthManager;
 import com.alipay.sofa.registry.client.auth.NoopAuthManager;
+import com.alipay.sofa.registry.client.constants.ConnectionType;
 import com.alipay.sofa.registry.client.event.ConfiguratorProcessEvent;
 import com.alipay.sofa.registry.client.event.DefaultEventBus;
 import com.alipay.sofa.registry.client.event.LookoutSubscriber;
 import com.alipay.sofa.registry.client.event.SubscriberProcessEvent;
-import com.alipay.sofa.registry.client.constants.ConnectionType;
 import com.alipay.sofa.registry.client.grpc.GrpcClient;
 import com.alipay.sofa.registry.client.log.LoggerFactory;
 import com.alipay.sofa.registry.client.remoting.*;
@@ -116,7 +116,6 @@ public class DefaultRegistryClient implements RegistryClient {
     this.registrationConfiguratorMap =
         new ConcurrentHashMap<ConfiguratorRegistration, Configurator>();
   }
-
 
   private DefaultRegistryClientConfig cloneConfig(RegistryClientConfig registryClientConfig) {
     DefaultRegistryClientConfig cloneConfig = null;
@@ -205,24 +204,25 @@ public class DefaultRegistryClient implements RegistryClient {
     // init connection event processor
     if (null == connectionEventProcessorMap) {
       connectionEventProcessorMap =
-              new HashMap<ConnectionEventType, ConnectionEventProcessor>(
-                      ConnectionEventType.values().length);
+          new HashMap<ConnectionEventType, ConnectionEventProcessor>(
+              ConnectionEventType.values().length);
     }
     if (null == connectionEventProcessorMap.get(ConnectionEventType.CLOSE)) {
       ClientConnectionCloseEventProcessor connectionCloseEventProcessor =
-              new ClientConnectionCloseEventProcessor();
+          new ClientConnectionCloseEventProcessor();
       connectionEventProcessorMap.put(ConnectionEventType.CLOSE, connectionCloseEventProcessor);
     }
     if (null == connectionEventProcessorMap.get(ConnectionEventType.CONNECT)) {
       ClientConnectionOpenEventProcessor connectionOpenEventProcessor =
-              new ClientConnectionOpenEventProcessor();
+          new ClientConnectionOpenEventProcessor();
       connectionEventProcessorMap.put(ConnectionEventType.CONNECT, connectionOpenEventProcessor);
     }
 
     // init client connection and register worker
     // todo factory facade proxy delegate refactor
-    if (connectionType == ConnectionType.BOLT){
-      ClientConnection client = new ClientConnection(
+    if (connectionType == ConnectionType.BOLT) {
+      ClientConnection client =
+          new ClientConnection(
               serverManager,
               userProcessorList,
               connectionEventProcessorMap,
@@ -231,16 +231,13 @@ public class DefaultRegistryClient implements RegistryClient {
       workerThread = new WorkerThread(client, registryClientConfig, registerCache);
       client.setWorker(workerThread);
       this.client = client;
-    } else{
-      GrpcClient grpcClient = new GrpcClient(
-              serverManager,
-              registerCache,
-              registryClientConfig);
+    } else {
+      GrpcClient grpcClient = new GrpcClient(serverManager, registerCache, registryClientConfig);
       workerThread = new WorkerThread(grpcClient, registryClientConfig, registerCache);
       grpcClient.setWorker(workerThread);
       this.client = grpcClient;
     }
-    //init
+    // init
     client.init();
     // init registry check thread
     new RegistryCheckThread().start();

@@ -33,9 +33,9 @@ public abstract class BiRequestStream implements com.google.protobuf.Service {
      * <code>rpc requestBiStream(stream .Payload) returns (stream .Payload);</code>
      */
     public abstract void requestBiStream(
-            com.google.protobuf.RpcController controller,
-            Payload request,
-            com.google.protobuf.RpcCallback<Payload> done);
+        com.google.protobuf.RpcController controller,
+        Payload request,
+        com.google.protobuf.RpcCallback<Payload> done);
   }
 
   public static com.google.protobuf.Service newReflectiveService(final Interface impl) {

@@ -16,7 +16,6 @@
  */
 package grpc;
 
-import com.alipay.sofa.registry.remoting.ChannelHandler;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ import java.util.Map;
  * @date 2022/11/20
  */
 public class RequestHandlerRegistry {
-  Map<String, ChannelHandler> registryHandlers = new HashMap<>();
+  Map<String, GrpcUserProcessorAdapter> registryHandlers = new HashMap<>();
 
   /**
    * Registry handler
@@ -33,7 +32,7 @@ public class RequestHandlerRegistry {
    * @param type
    * @param handler
    */
-  public void registryHandler(String type, ChannelHandler handler) {
+  public void registryHandler(String type, GrpcUserProcessorAdapter handler) {
     registryHandlers.put(type, handler);
   }
 
@@ -43,7 +42,7 @@ public class RequestHandlerRegistry {
    * @param requestType see definitions of sub constants classes of RequestTypeConstants
    * @return request handler.
    */
-  public ChannelHandler getByRequestType(String requestType) {
+  public GrpcUserProcessorAdapter getByRequestType(String requestType) {
     return registryHandlers.get(requestType);
   }
 }

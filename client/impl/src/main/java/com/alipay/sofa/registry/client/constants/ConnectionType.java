@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.alipay.sofa.registry.client.constants;
 
 /**
@@ -24,65 +23,63 @@ package com.alipay.sofa.registry.client.constants;
  * @version $Id: ConnectionType.java, v 0.1 2020年07月13日 7:15 PM liuzunfei Exp $
  */
 public enum ConnectionType {
-    /**
-     * gRPC connection.
-     */
-    GRPC("GRPC", "Grpc Connection"),
+  /** gRPC connection. */
+  GRPC("GRPC", "Grpc Connection"),
 
-    BOLT("BOLT", "Bolt Connection");
-    
-    String type;
-    
-    String name;
-    
-    public static ConnectionType getByType(String type) {
-        ConnectionType[] values = ConnectionType.values();
-        for (ConnectionType connectionType : values) {
-            if (connectionType.getType().equals(type)) {
-                return connectionType;
-            }
-        }
-        return null;
+  BOLT("BOLT", "Bolt Connection");
+
+  String type;
+
+  String name;
+
+  public static ConnectionType getByType(String type) {
+    ConnectionType[] values = ConnectionType.values();
+    for (ConnectionType connectionType : values) {
+      if (connectionType.getType().equals(type)) {
+        return connectionType;
+      }
     }
-    
-    ConnectionType(String type, String name) {
-        this.type = type;
-        this.name = name;
-    }
-    
-    /**
-     * Getter method for property <tt>type</tt>.
-     *
-     * @return property value of type
-     */
-    public String getType() {
-        return type;
-    }
-    
-    /**
-     * Setter method for property <tt>type</tt>.
-     *
-     * @param type value to be assigned to property type
-     */
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    /**
-     * Getter method for property <tt>name</tt>.
-     *
-     * @return property value of name
-     */
-    public String getName() {
-        return name;
-    }
-    
-    /**
-     * Setter method for property <tt>name</tt>.
-     *
-     * @param name value to be assigned to property name
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
+    return null;
+  }
+
+  ConnectionType(String type, String name) {
+    this.type = type;
+    this.name = name;
+  }
+
+  /**
+   * Getter method for property <tt>type</tt>.
+   *
+   * @return property value of type
+   */
+  public String getType() {
+    return type;
+  }
+
+  /**
+   * Setter method for property <tt>type</tt>.
+   *
+   * @param type value to be assigned to property type
+   */
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  /**
+   * Getter method for property <tt>name</tt>.
+   *
+   * @return property value of name
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Setter method for property <tt>name</tt>.
+   *
+   * @param name value to be assigned to property name
+   */
+  public void setName(String name) {
+    this.name = name;
+  }
 }

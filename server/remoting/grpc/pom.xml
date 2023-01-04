@@ -76,10 +76,6 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>com.alipay.sofa</groupId>
-            <artifactId>registry-server-shared</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

@@ -17,8 +17,6 @@
 package com.alipay.sofa.registry.server.session.bootstrap;
 
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInterceptor;
-import com.alipay.sofa.registry.core.model.SubscriberRegister;
-import com.alipay.sofa.registry.core.model.SyncConfigRequest;
 import com.alipay.sofa.registry.jdbc.config.JdbcConfiguration;
 import com.alipay.sofa.registry.jraft.config.RaftConfiguration;
 import com.alipay.sofa.registry.remoting.bolt.exchange.BoltExchange;
@@ -90,6 +88,8 @@ import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import grpc.GrpcUserProcessorAdapter;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -198,9 +198,10 @@ public class SessionServerConfiguration {
       return new SlotTableCacheImpl();
     }
 
+    //包装器模式
 
     @Bean(name = "grpcServerHandlers")
-    public Collection<AbstractServerHandler> grpcServerHandlers() {
+    public Collection<AbstractServerHandler> grpcUserProcessor() {
       Collection<AbstractServerHandler> list = new ArrayList<>();
       list.add(publisherHandler());
       list.add(subscriberHandler());

@@ -48,6 +48,7 @@ public class GrpcConnection extends Connection {
 
   @Override
   public boolean isConnected() {
+    //todo 如何判断一个连接的有效性
     return true;
   }
 
@@ -65,6 +66,7 @@ public class GrpcConnection extends Connection {
     if (streamObserver instanceof ServerCallStreamObserver) {
       ServerCallStreamObserver serverCallStreamObserver =
           ((ServerCallStreamObserver) streamObserver);
+      serverCallStreamObserver.isReady();
       if (!serverCallStreamObserver.isCancelled()) {
         serverCallStreamObserver.onCompleted();
       }

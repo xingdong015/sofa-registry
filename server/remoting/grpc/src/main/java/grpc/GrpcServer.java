@@ -26,9 +26,9 @@ import com.alipay.sofa.registry.remoting.CallbackHandler;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.ChannelHandler;
 import com.alipay.sofa.registry.remoting.Server;
-import com.alipay.sofa.registry.remoting.bolt.BoltChannel;
+import grpc.handler.GrpcBiStreamRequestAcceptor;
+import grpc.handler.GrpcCommonRequestAcceptor;
 import io.grpc.*;
-import io.grpc.internal.ServerStream;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
@@ -40,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -51,6 +52,8 @@ public class GrpcServer implements Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(GrpcServer.class);
 
     private io.grpc.Server grpcServer;
+
+    private static final long DEFAULT_KEEP_ALIVE_TIME = 3 * 1000;
 
     private static final String REQUEST_BI_STREAM_SERVICE_NAME = "BiRequestStream";
 
@@ -70,18 +73,18 @@ public class GrpcServer implements Server {
 
     static final Attributes.Key<Integer> TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
 
-    static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
+    public static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
 
-    static final Context.Key<String> CONTEXT_KEY_CONN_REMOTE_IP = Context.key("remote_ip");
+    public static final Context.Key<String> CONTEXT_KEY_CONN_REMOTE_IP = Context.key("remote_ip");
 
-    static final Context.Key<Integer> CONTEXT_KEY_CONN_REMOTE_PORT = Context.key("remote_port");
+    public static final Context.Key<Integer> CONTEXT_KEY_CONN_REMOTE_PORT = Context.key("remote_port");
 
-    static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
+    public static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
 
     /**
      * accoding server port can not be null
      */
-    protected final URL                                                        url;
+    protected final URL url;
 
     private final List<ChannelHandler> handlers;
 
@@ -118,6 +121,8 @@ public class GrpcServer implements Server {
         return ServerBuilder.forPort(url.getPort()).executor(GrpcUtils.grpcServerExecutor).
                 maxInboundMessageSize(10 * 1024 * 1024).
                 compressorRegistry(CompressorRegistry.getDefaultInstance()).
+                //todo https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md
+                        keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS).
                 decompressorRegistry(DecompressorRegistry.getDefaultInstance()).
                 fallbackHandlerRegistry(handlerRegistry).
                 addTransportFilter(new ServerTransportFilter() {
@@ -194,6 +199,11 @@ public class GrpcServer implements Server {
     public void close() {
     }
 
+    private long keepAliveTimeMillis() {
+        String keepAliveTimeMillis = System.getProperty("sofa.registry.server.grpc.keep.alive.millis", String.valueOf(DEFAULT_KEEP_ALIVE_TIME));
+        return Integer.parseInt(keepAliveTimeMillis);
+    }
+
     @Override
     public boolean isClosed() {
         return false;
@@ -227,9 +237,9 @@ public class GrpcServer implements Server {
 
     @Override
     public Channel getChannel(URL url) {
-        Url key = new Url(url.getIpAddress(), url.getPort());
-        Connection connection = connectionManager.getConnectionByKey(key.getUniqueKey() );
-        if (Objects.isNull(connection)){
+        Url        key        = new Url(url.getIpAddress(), url.getPort());
+        Connection connection = connectionManager.getConnectionByKey(key.getUniqueKey());
+        if (Objects.isNull(connection)) {
             return null;
         }
         return new GrpcChannel(connection);
@@ -270,13 +280,13 @@ public class GrpcServer implements Server {
             if (ChannelHandler.HandlerType.PROCESSER.equals(channelHandler.getType())) {
                 Class<?> clazz  = channelHandler.getClass();
                 Class    tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
-                requestHandlerRegistry.registryHandler(tClass.getSimpleName(), channelHandler);
+                requestHandlerRegistry.registryHandler(tClass.getSimpleName(), newSyncUserProcessorAdapter(channelHandler));
             }
         }
     }
 
-    private static ServerStream getInternalChannel(ServerCall serverCall) {
-        return (ServerStream) getFieldValue(serverCall, "stream");
+    protected GrpcUserProcessorAdapter newSyncUserProcessorAdapter(ChannelHandler channelHandler) {
+        return new GrpcUserProcessorAdapter(channelHandler);
     }
 
     /**
