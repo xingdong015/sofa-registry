@@ -19,7 +19,6 @@ package grpc;
 import com.alipay.remoting.Url;
 import com.alipay.sofa.registry.log.Logger;
 import com.alipay.sofa.registry.log.LoggerFactory;
-import org.apache.commons.collections.CollectionUtils;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,8 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2022/11/20
  */
 public class ConnectionManager {
-  private static final int    MAX_TIMES = 5;
-  private final        Random random    = new Random();
+  private static final int MAX_TIMES = 5;
+  private final Random random = new Random();
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
 
@@ -79,38 +78,9 @@ public class ConnectionManager {
     return connections.get(connectionId);
   }
 
-  public Connection getConnectionByKey(String uniqueKey){
-    final List<Connection> connectionList = new ArrayList<>();
-    for (Map.Entry<String, Connection> entry : connections.entrySet()) {
-      Connection        connection    = entry.getValue();
-      InetSocketAddress remoteAddress = connection.getRemoteAddress();
-      InetAddress       address       = remoteAddress.getAddress();
-      String            hostAddress   = address.getHostAddress();
-      int               port          = remoteAddress.getPort();
-      Url               key           = new Url(hostAddress, port);
-      if (key.getUniqueKey().equals(uniqueKey)) {
-        connectionList.add(connection);
-      }
-    }
-
-    if (null == connectionList || connectionList.isEmpty()) {
-      return null;
-    }
-    int size = connections.size();
-    int tries = 0;
-    Connection result = null;
-    while ((result == null || !result.isConnected()) && tries++ < MAX_TIMES) {
-      result = connectionList.get(this.random.nextInt(size));
-    }
-
-    if (result != null && !result.isConnected()) {
-      result = null;
-    }
-    return result;
-  }
-
   /**
    * connection un register
+   *
    * @param connectionId
    */
   public void unregister(String connectionId) {
@@ -127,5 +97,9 @@ public class ConnectionManager {
       remove.close();
       LOGGER.info("[{}]Connection unregistered successfully. ", connectionId);
     }
+  }
+
+  public Map<String, Connection> getAll() {
+    return Collections.unmodifiableMap(connections);
   }
 }

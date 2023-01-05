@@ -26,17 +26,17 @@ import com.alipay.sofa.registry.remoting.CallbackHandler;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.ChannelHandler;
 import com.alipay.sofa.registry.remoting.Server;
+import com.google.common.collect.Lists;
 import grpc.handler.GrpcBiStreamRequestAcceptor;
 import grpc.handler.GrpcCommonRequestAcceptor;
 import io.grpc.*;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
-import org.apache.commons.lang.StringUtils;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,33 +53,7 @@ public class GrpcServer implements Server {
 
     private io.grpc.Server grpcServer;
 
-    private static final long DEFAULT_KEEP_ALIVE_TIME = 3 * 1000;
-
-    private static final String REQUEST_BI_STREAM_SERVICE_NAME = "BiRequestStream";
-
-    private static final String REQUEST_BI_STREAM_METHOD_NAME = "requestBiStream";
-
-    private static final String REQUEST_SERVICE_NAME = "Request";
-
-    private static final String REQUEST_METHOD_NAME = "request";
-
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
-
-    static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
-
-    static final Attributes.Key<String> TRANS_KEY_REMOTE_IP = Attributes.Key.create("remote_ip");
-
-    static final Attributes.Key<Integer> TRANS_KEY_REMOTE_PORT = Attributes.Key.create("remote_port");
-
-    static final Attributes.Key<Integer> TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
-
-    public static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
-
-    public static final Context.Key<String> CONTEXT_KEY_CONN_REMOTE_IP = Context.key("remote_ip");
-
-    public static final Context.Key<Integer> CONTEXT_KEY_CONN_REMOTE_PORT = Context.key("remote_port");
-
-    public static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
 
     /**
      * accoding server port can not be null
@@ -102,93 +76,68 @@ public class GrpcServer implements Server {
 
     private io.grpc.Server newGrpcServer() {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
-
-        ServerInterceptor serverInterceptor = new ServerInterceptor() {
-            @Override
-            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
-                // 请求的前置设置
-                Context ctx = Context.current().
-                        withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID)).
-                        withValue(CONTEXT_KEY_CONN_REMOTE_IP, call.getAttributes().get(TRANS_KEY_REMOTE_IP)).
-                        withValue(CONTEXT_KEY_CONN_REMOTE_PORT, call.getAttributes().get(TRANS_KEY_REMOTE_PORT)).
-                        withValue(CONTEXT_KEY_CONN_LOCAL_PORT, call.getAttributes().get(TRANS_KEY_LOCAL_PORT));
-                return Contexts.interceptCall(ctx, call, headers, next);
-            }
-        };
-
-        addServices(handlerRegistry, serverInterceptor);
-
-        return ServerBuilder.forPort(url.getPort()).executor(GrpcUtils.grpcServerExecutor).
-                maxInboundMessageSize(10 * 1024 * 1024).
-                compressorRegistry(CompressorRegistry.getDefaultInstance()).
-                //todo https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md
-                        keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS).
-                decompressorRegistry(DecompressorRegistry.getDefaultInstance()).
-                fallbackHandlerRegistry(handlerRegistry).
-                addTransportFilter(new ServerTransportFilter() {
-                    @Override
-                    public Attributes transportReady(Attributes transportAttrs) {
-                        InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
-                        InetSocketAddress localAddress  = (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
-                        int               remotePort    = remoteAddress.getPort();
-                        int               localPort     = localAddress.getPort();
-                        String            remoteIp      = remoteAddress.getAddress().getHostAddress();
-                        return transportAttrs.toBuilder().
-                                set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort).
-                                set(TRANS_KEY_REMOTE_IP, remoteIp).
-                                set(TRANS_KEY_REMOTE_PORT, remotePort).
-                                set(TRANS_KEY_LOCAL_PORT, localPort).build();
-                    }
-
-                    @Override
-                    public void transportTerminated(Attributes transportAttrs) {
-                        LOGGER.info("transport terminated transportAttrs={}", transportAttrs);
-                        String connectionId = null;
-                        try {
-                            connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        } catch (Exception e) {
-                            // Ignore
-                        }
-                        if (StringUtils.isNotBlank(connectionId)) {
-                            LOGGER.info("Connection transportTerminated,connectionId = {} ", connectionId);
-                            connectionManager.unregister(connectionId);
-                        }
-                    }
-                }).build();
+        addServices(handlerRegistry, new ConnectionInterceptor());
+        // todo 参考 https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md
+        return ServerBuilder.forPort(url.getPort())
+                .executor(GrpcUtils.grpcServerExecutor)
+                .maxInboundMessageSize(getMaxInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
+                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
+                .addTransportFilter(new AddressTransportFilter(connectionManager))
+                .maxConnectionIdle(getMaxConnectionIdle(), TimeUnit.MILLISECONDS)
+                .keepAliveTime(getKeepAliveTime(), TimeUnit.MILLISECONDS)
+                .keepAliveTimeout(getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
+                .permitKeepAliveTime(getPermitKeepAliveTime(), TimeUnit.MILLISECONDS)
+                .build();
     }
 
-    private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor serverInterceptor) {
+    private void addServices(
+            MutableHandlerRegistry handlerRegistry, ServerInterceptor serverInterceptor) {
         // unary common call register.
-        final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.UNARY)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
-                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+        final MethodDescriptor<Payload, Payload> unaryPayloadMethod =
+                MethodDescriptor.<Payload, Payload>newBuilder()
+                        .setType(MethodDescriptor.MethodType.UNARY).setFullMethodName(
+                                MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_SERVICE_NAME,
+                                        GrpcServerConstants.REQUEST_METHOD_NAME))
+                        .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                        .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                        .build();
 
-        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
-                .asyncUnaryCall((request, responseObserver) -> new GrpcCommonRequestAcceptor(requestHandlerRegistry, connectionManager)
-                        .request(request, responseObserver));
 
-        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
-                .addMethod(unaryPayloadMethod, payloadHandler).build();
-        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
+        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall(
+                (request, responseObserver) ->
+                        new GrpcCommonRequestAcceptor(requestHandlerRegistry, connectionManager).request(request, responseObserver));
+
+        final ServerServiceDefinition serviceDefOfUnaryPayload =
+                ServerServiceDefinition.builder(GrpcServerConstants.REQUEST_SERVICE_NAME)
+                        .addMethod(unaryPayloadMethod, payloadHandler)
+                        .build();
+        handlerRegistry.addService(
+                ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
 
         // bi stream register.
-        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
-                (responseObserver) -> new GrpcBiStreamRequestAcceptor(requestHandlerRegistry, connectionManager).requestBiStream(responseObserver));
+        final ServerCallHandler<Payload, Payload> biStreamHandler =
+                ServerCalls.asyncBidiStreamingCall(
+                        (responseObserver) ->
+                                new GrpcBiStreamRequestAcceptor(connectionManager)
+                                        .requestBiStream(responseObserver));
 
-        final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
-                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+        final MethodDescriptor<Payload, Payload> biStreamMethod =
+                MethodDescriptor.<Payload, Payload>newBuilder()
+                        .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(
+                                MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME,
+                                        GrpcServerConstants.REQUEST_BI_STREAM_METHOD_NAME))
+                        .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                        .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                        .build();
 
-        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
-                .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
-        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
-
+        final ServerServiceDefinition serviceDefOfBiStream =
+                ServerServiceDefinition.builder(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME)
+                        .addMethod(biStreamMethod, biStreamHandler)
+                        .build();
+        handlerRegistry.addService(
+                ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
     }
-
 
     @Override
     public InetSocketAddress getLocalAddress() {
@@ -197,27 +146,45 @@ public class GrpcServer implements Server {
 
     @Override
     public void close() {
+        stopServer();
     }
 
-    private long keepAliveTimeMillis() {
-        String keepAliveTimeMillis = System.getProperty("sofa.registry.server.grpc.keep.alive.millis", String.valueOf(DEFAULT_KEEP_ALIVE_TIME));
-        return Integer.parseInt(keepAliveTimeMillis);
+    private void stopServer() {
+        if (grpcServer != null && isStarted.get()) {
+            try {
+                grpcServer.shutdownNow();
+            } catch (Exception e) {
+                LOGGER.error("Stop grpc server error!", e);
+                throw new RuntimeException("Stop grpc server error!", e);
+            }
+        }
     }
 
     @Override
     public boolean isClosed() {
-        return false;
+        return !isStarted.get();
     }
 
     @Override
     public boolean isOpen() {
-        return false;
+        return isStarted.get();
     }
 
     @Override
     public List<Channel> getChannels() {
-
-        return null;
+        Map<String, Connection>                           conns   = connectionManager.getAll();
+        if (conns.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Channel> ret = Lists.newArrayListWithCapacity(128);
+        for (Map.Entry<String, Connection> entry : conns.entrySet()) {
+            Connection conn = entry.getValue();
+            if (conn.isConnected()) {
+                GrpcChannel boltChannel = new GrpcChannel(conn);
+                ret.add(boltChannel);
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -232,13 +199,14 @@ public class GrpcServer implements Server {
 
     @Override
     public Channel getChannel(InetSocketAddress remoteAddress) {
-        return null;
+        URL url = new URL(remoteAddress.getAddress().getHostAddress(), remoteAddress.getPort());
+        return getChannel(url);
     }
 
     @Override
     public Channel getChannel(URL url) {
         Url        key        = new Url(url.getIpAddress(), url.getPort());
-        Connection connection = connectionManager.getConnectionByKey(key.getUniqueKey());
+        Connection connection = connectionManager.getConnection(key.getUniqueKey());
         if (Objects.isNull(connection)) {
             return null;
         }
@@ -247,6 +215,14 @@ public class GrpcServer implements Server {
 
     @Override
     public void close(Channel channel) {
+        if (channel == null) {
+            return;
+        }
+        GrpcChannel                    boltChannel = (GrpcChannel) channel;
+        Connection                     connection  = boltChannel.getConnection();
+        if (connection.isConnected()) {
+            connection.close();
+        }
     }
 
     @Override
@@ -255,19 +231,33 @@ public class GrpcServer implements Server {
     }
 
     @Override
-    public void sendCallback(Channel channel, Object message, CallbackHandler callbackHandler, int timeoutMillis) {
+    public void sendCallback(
+            Channel channel, Object message, CallbackHandler callbackHandler, int timeoutMillis) {
+        Url        key        = new Url(url.getIpAddress(), url.getPort());
+        Connection connection = connectionManager.getConnection(key.getUniqueKey());
+        connection.sendRequest(message);
     }
 
     @Override
     public Object sendSync(Channel channel, Object message, int timeoutMillis) {
+        Connection connection = connectionManager.getConnection("1");
+        //使用 GrpcConnection 发送消息
         return null;
     }
 
     public void startServer() {
         if (isStarted.compareAndSet(false, true)) {
             try {
-                initHandlerRegistry();
+                initHandle();
                 grpcServer.start();
+
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    try {
+                        GrpcServer.this.stopServer();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }));
             } catch (Exception e) {
                 isStarted.set(false);
                 throw new RuntimeException("Start bolt server error!", e);
@@ -275,11 +265,11 @@ public class GrpcServer implements Server {
         }
     }
 
-    private void initHandlerRegistry() {
+    private void initHandle() {
         for (ChannelHandler channelHandler : handlers) {
             if (ChannelHandler.HandlerType.PROCESSER.equals(channelHandler.getType())) {
-                Class<?> clazz  = channelHandler.getClass();
-                Class    tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+                Class<?> clazz = channelHandler.getClass();
+                Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
                 requestHandlerRegistry.registryHandler(tClass.getSimpleName(), newSyncUserProcessorAdapter(channelHandler));
             }
         }
@@ -289,37 +279,28 @@ public class GrpcServer implements Server {
         return new GrpcUserProcessorAdapter(channelHandler);
     }
 
-    /**
-     * get filed value of obj.
-     *
-     * @param obj       obj.
-     * @param fieldName file name to get value.
-     * @return field value.
-     */
-    public static Object getFieldValue(Object obj, String fieldName) {
-        try {
-            Field field = obj.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+
+    protected long getPermitKeepAliveTime() {
+        return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_PERMIT_KEEP_ALIVE_TIME;
     }
 
-    /**
-     * get filed value of obj.
-     *
-     * @param obj       obj.
-     * @param fieldName file name to get value.
-     * @return field value.
-     */
-    public static Object getFieldValue(Object obj, String fieldName, Object defaultValue) {
-        try {
-            Field field = obj.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (Exception e) {
-            return defaultValue;
+    protected long getKeepAliveTime() {
+        return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_KEEP_ALIVE_TIME;
+    }
+
+    protected long getKeepAliveTimeout() {
+        return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_KEEP_ALIVE_TIMEOUT;
+    }
+
+    protected long getMaxConnectionIdle() {
+        return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_MAX_CONNECTION_IDLE;
+    }
+
+    protected int getMaxInboundMessageSize() {
+        String propertyStr = System.getProperty(GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY);
+        if (propertyStr != null) {
+            return Integer.parseInt(propertyStr);
         }
+        return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE;
     }
 }

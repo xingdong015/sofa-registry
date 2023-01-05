@@ -16,7 +16,6 @@
  */
 package com.alipay.sofa.registry.server.meta.remoting;
 
-import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.server.meta.bootstrap.config.MetaServerConfig;
 import com.alipay.sofa.registry.server.shared.remoting.ServerSideExchanger;
 import com.google.common.annotations.VisibleForTesting;
@@ -45,5 +44,4 @@ public class DataNodeExchanger extends ServerSideExchanger {
     this.metaServerConfig = metaServerConfig;
     return this;
   }
-
 }

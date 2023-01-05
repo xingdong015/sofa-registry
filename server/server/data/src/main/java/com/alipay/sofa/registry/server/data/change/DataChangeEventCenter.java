@@ -438,7 +438,7 @@ public class DataChangeEventCenter {
     }
     return events;
   }
-  //dataServer 启动时创建了一个 DataChangeEventCenter.ChangeMerger 线程，用于处理数据变更通知的缓存；
+  // dataServer 启动时创建了一个 DataChangeEventCenter.ChangeMerger 线程，用于处理数据变更通知的缓存；
   private final class ChangeMerger extends LoopRunnable {
 
     @Override

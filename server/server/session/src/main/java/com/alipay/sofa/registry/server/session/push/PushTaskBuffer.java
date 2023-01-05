@@ -138,7 +138,7 @@ public final class PushTaskBuffer {
       return pending;
     }
   }
-  //BufferWorker 线程循环执行 watchBuffer 方法，将 worker 中缓存的过期任务删除后进行处理，具体逻辑见下边源码
+  // BufferWorker 线程循环执行 watchBuffer 方法，将 worker 中缓存的过期任务删除后进行处理，具体逻辑见下边源码
 
   int watchBuffer(BufferWorker worker) {
     int bufferedSize = worker.bufferMap.size();

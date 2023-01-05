@@ -22,7 +22,6 @@ import com.alipay.sofa.registry.common.model.wrapper.WrapperInterceptor;
 import com.alipay.sofa.registry.common.model.wrapper.WrapperInvocation;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Server;
-import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
 import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
@@ -41,8 +40,6 @@ public class ClientCheckWrapperInterceptor
 
   @Autowired private ExchangeManager exchangeManager;
 
-
-
   @Override
   public Boolean invokeCodeWrapper(WrapperInvocation<RegisterInvokeData, Boolean> invocation)
       throws Exception {
@@ -50,9 +47,12 @@ public class ClientCheckWrapperInterceptor
     RegisterInvokeData registerInvokeData = invocation.getParameterSupplier().get();
     BaseInfo baseInfo = (BaseInfo) registerInvokeData.getStoreData();
 
-    URL    address = baseInfo.getSourceAddress();
+    URL address = baseInfo.getSourceAddress();
     URL.ProtocolType protocol = address.getProtocol();
-    Server sessionServer = exchangeManager.getExchangeByPrototype(protocol).getServer(sessionServerConfig.getServerPort());
+    Server sessionServer =
+        exchangeManager
+            .getExchangeByPrototype(protocol)
+            .getServer(sessionServerConfig.getServerPort());
 
     Channel channel = sessionServer.getChannel(baseInfo.getSourceAddress());
 

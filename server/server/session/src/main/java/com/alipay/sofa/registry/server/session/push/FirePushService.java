@@ -291,9 +291,9 @@ public class FirePushService {
 
   // 通过 FirePushService#getDatum 方法从缓存中获取地址列表。该缓存使用 Guava Cache 的LoadingCache，
   // 当缓存中没有 dataInfoId 的地址列表时，会自动从 data server 获取地址列表，并放在缓存中。
-  //通过 FirePushService#processPush 方法将地址列表推送给所有订阅者
-  //首先通过 firePush 方法将 PushTas k放入 buffer
-  //等待 PushTaskBuffer.BufferWorker 线程异步处理任务
+  // 通过 FirePushService#processPush 方法将地址列表推送给所有订阅者
+  // 首先通过 firePush 方法将 PushTas k放入 buffer
+  // 等待 PushTaskBuffer.BufferWorker 线程异步处理任务
 
   boolean doExecuteOnReg(String dataInfoId, List<Subscriber> subscribers) {
     // TODO multi datacenter

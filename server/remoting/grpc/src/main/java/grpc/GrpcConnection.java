@@ -16,11 +16,13 @@
  */
 package grpc;
 
+import com.alipay.sofa.registry.core.grpc.Payload;
+import com.alipay.sofa.registry.core.grpc.Request;
+import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import io.grpc.internal.ServerStream;
-import io.grpc.netty.shaded.io.netty.channel.Channel;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ServerCallStreamObserver;
-import io.grpc.stub.StreamObserver;
+
 import java.util.Map;
 
 /**
@@ -30,46 +32,59 @@ import java.util.Map;
 @JsonPOJOBuilder
 public class GrpcConnection extends Connection {
 
-  private StreamObserver streamObserver;
+    private final ServerCallStreamObserver streamObserver;
 
-
-  public GrpcConnection(
-      String connectionId,
-      String clientIp,
-      int localPort,
-      String remoteIp,
-      int remotePort,
-      String version,
-      Map<String, String> attributes,
-      StreamObserver streamObserver) {
-    super(connectionId, clientIp, localPort, remoteIp, remotePort, version, attributes);
-    this.streamObserver = streamObserver;
-  }
-
-  @Override
-  public boolean isConnected() {
-    //todo 如何判断一个连接的有效性
-    return true;
-  }
-
-  @Override
-  public void close() {
-    try {
-      closeBiStream();
-      //todo
-    } catch (Exception e) {
-      e.printStackTrace();
+    public GrpcConnection(
+            String connectionId,
+            String clientIp,
+            int localPort,
+            String remoteIp,
+            int remotePort,
+            String version,
+            Map<String, String> attributes,
+            ServerCallStreamObserver streamObserver) {
+        super(connectionId, clientIp, localPort, remoteIp, remotePort, version, attributes);
+        this.streamObserver = streamObserver;
     }
-  }
 
-  private void closeBiStream() {
-    if (streamObserver instanceof ServerCallStreamObserver) {
-      ServerCallStreamObserver serverCallStreamObserver =
-          ((ServerCallStreamObserver) streamObserver);
-      serverCallStreamObserver.isReady();
-      if (!serverCallStreamObserver.isCancelled()) {
-        serverCallStreamObserver.onCompleted();
-      }
+    @Override
+    public boolean isConnected() {
+        return streamObserver.isReady();
     }
-  }
+
+    @Override
+    public void close() {
+        try {
+            closeBiStream();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeBiStream() {
+        if (streamObserver.isCancelled()) {
+            return;
+        }
+        streamObserver.onCompleted();
+    }
+
+
+    @Override
+    protected void sendRequest(Object request)  {
+        try {
+            //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
+            synchronized (streamObserver) {
+
+                Payload payload = GrpcUtils.convert(request);
+                streamObserver.onNext(payload);
+            }
+        } catch (Exception e) {
+            if (e instanceof StatusRuntimeException) {
+                throw new RuntimeException(e);
+            }
+            throw e;
+        }
+    }
+
+
 }

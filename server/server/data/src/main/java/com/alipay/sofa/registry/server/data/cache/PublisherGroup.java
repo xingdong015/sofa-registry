@@ -54,9 +54,9 @@ import org.apache.commons.collections.MapUtils;
  */
 public final class PublisherGroup {
   private static final Logger LOGGER = LoggerFactory.getLogger(PublisherGroup.class);
-  //乐观并发控制：通过版本号避免旧版本数据写入，如 Publisher 的 registerVersion
+  // 乐观并发控制：通过版本号避免旧版本数据写入，如 Publisher 的 registerVersion
   // 可以防止 data server 将旧版本的 publisher 存入；Datum 的 version 可以防止将旧版本的地址列表写入缓存；
-  //悲观并发控制：如 PublisherGroup 中通过读写锁在更改版本号，或增删发布者时进行写锁控制，防止并发写入；对查询等进行读锁控制。
+  // 悲观并发控制：如 PublisherGroup 中通过读写锁在更改版本号，或增删发布者时进行写锁控制，防止并发写入；对查询等进行读锁控制。
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
 

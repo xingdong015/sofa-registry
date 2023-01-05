@@ -16,6 +16,8 @@
  */
 package grpc;
 
+import com.alipay.sofa.registry.core.grpc.Request;
+
 import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,7 +48,6 @@ public abstract class Connection {
 
   /** create time. */
   Date createTime;
-
 
   protected Map<String, String> attributes = new HashMap<>();
 
@@ -123,4 +124,6 @@ public abstract class Connection {
         + attributes
         + '}';
   }
+
+  protected abstract void sendRequest(Object request);
 }

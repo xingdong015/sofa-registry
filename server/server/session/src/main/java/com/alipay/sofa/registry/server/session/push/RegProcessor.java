@@ -174,9 +174,9 @@ public final class RegProcessor {
       }
       return ret;
     }
-    //BufferWorker 线程循环处理 map 缓存中的订阅注册任务，处理流程：
-    //从 worker 的 subMap 取出所有 dataInfoId 和订阅者列表，并对每个 dataInfoId 分别处理
-    //通过 RegProcessor#processBuffer 方法处理每个 dataInfoId 和对应的订阅者
+    // BufferWorker 线程循环处理 map 缓存中的订阅注册任务，处理流程：
+    // 从 worker 的 subMap 取出所有 dataInfoId 和订阅者列表，并对每个 dataInfoId 分别处理
+    // 通过 RegProcessor#processBuffer 方法处理每个 dataInfoId 和对应的订阅者
 
     int watchBuffer() {
       final List<Ref> refs = getAndResetBuffer();

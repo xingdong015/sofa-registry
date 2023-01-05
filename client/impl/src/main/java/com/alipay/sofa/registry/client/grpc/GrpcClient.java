@@ -31,10 +31,7 @@ import com.alipay.sofa.registry.client.task.Worker;
 import com.alipay.sofa.registry.client.task.WorkerThread;
 import com.alipay.sofa.registry.core.grpc.*;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
-import io.grpc.CompressorRegistry;
-import io.grpc.DecompressorRegistry;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.*;
 import io.grpc.stub.StreamObserver;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -161,10 +158,10 @@ public class GrpcClient implements Client {
         ManagedChannelBuilder.forAddress(serverIp, serverPort)
             .compressorRegistry(CompressorRegistry.getDefaultInstance())
             .keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS)
-            .
+            .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
             // todo https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md
             // keepAliveTimeout(keepAliveTim).
-            decompressorRegistry(DecompressorRegistry.getDefaultInstance())
+                //todo 连接是否池话 https://stackoverflow.com/questions/68229848/grpc-java-multiple-channel-management
             .usePlaintext();
     return managedChannelBuilder.build();
   }
@@ -186,6 +183,9 @@ public class GrpcClient implements Client {
     GrpcConnection connection = null;
     List<ServerNode> serverNodes = new ArrayList<>(serverManager.getServerList());
     // shuffle server list to make server connections as discrete as possible
+    //todo lb 策略。 https://github.com/grpc/grpc/blob/master/doc/load-balancing.md 参考 grpc的lb策略
+    // nacos 的策略很简单
+    // 重新连接的时候 指数退避策略 https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md
     Collections.shuffle(serverNodes);
     for (ServerNode serverNode : serverNodes) {
       try {
@@ -259,6 +259,9 @@ public class GrpcClient implements Client {
     int port = serverNode.getPort();
     try {
       ManagedChannel managedChannel = createNewManagedChannel(host, port);
+      // 是否需要初始化 managedChannel 连接服务端
+      // https://stackoverflow.com/questions/43284217/getting-connection-state-for-grpc
+      // 参考 nacos 的健康检测
       RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
       RequestGrpc.RequestBlockingStub requestBlockingStub =
           RequestGrpc.newBlockingStub(managedChannel);

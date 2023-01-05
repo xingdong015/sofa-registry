@@ -90,7 +90,7 @@ public class ChangeProcessor {
           expireDeadlineTimestamp);
     }
   }
-  //同样地，此处采用生产者消费者模型，通过 worker 线程异步循环处理 ChangeTask，获取地址列表，
+  // 同样地，此处采用生产者消费者模型，通过 worker 线程异步循环处理 ChangeTask，获取地址列表，
   // 更新地址列表缓存，推送给客户端，
 
   static final class Worker extends WakeUpLoopRunnable {

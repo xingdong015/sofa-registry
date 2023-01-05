@@ -88,8 +88,6 @@ import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import grpc.GrpcUserProcessorAdapter;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -198,7 +196,7 @@ public class SessionServerConfiguration {
       return new SlotTableCacheImpl();
     }
 
-    //包装器模式
+    // 包装器模式
 
     @Bean(name = "grpcServerHandlers")
     public Collection<AbstractServerHandler> grpcUserProcessor() {
@@ -378,7 +376,6 @@ public class SessionServerConfiguration {
       list.add(dataPushRequestHandler());
       return list;
     }
-
 
     @Bean(name = "metaClientHandlers")
     public Collection<AbstractClientHandler> metaClientHandlers() {
