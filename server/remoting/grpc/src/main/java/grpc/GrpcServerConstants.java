@@ -3,6 +3,8 @@ package grpc;
 import io.grpc.Attributes;
 import io.grpc.Context;
 
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,23 +38,13 @@ public class GrpcServerConstants {
 
     static class GrpcConfig {
 
-        private static final String REGISTRY_REMOTE_SERVER_GRPC_PREFIX = "registry.remote.server.grpc.";
+        public static final  ThreadPoolExecutor GRPC_SERVER_THREAD_POOL_EXECUTOR =
+                new ThreadPoolExecutor(10, 10, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
+        private static final String             REGISTRY_REMOTE_SERVER_GRPC_PREFIX = "registry.remote.server.grpc.";
 
         public static final String MAX_INBOUND_MSG_SIZE_PROPERTY =
                 REGISTRY_REMOTE_SERVER_GRPC_PREFIX + "max-inbound-message-size";
-
-        public static final String KEEP_ALIVE_TIME_PROPERTY =
-                REGISTRY_REMOTE_SERVER_GRPC_PREFIX + "keep-alive-time";
-
-        public static final String KEEP_ALIVE_TIMEOUT_PROPERTY =
-                REGISTRY_REMOTE_SERVER_GRPC_PREFIX + "keep-alive-timeout";
-
-        public static final String PERMIT_KEEP_ALIVE_TIME =
-                REGISTRY_REMOTE_SERVER_GRPC_PREFIX + "permit-keep-alive-time";
-
-        public static final String MAX_CONNECTION_IDLE_PROPERTY =
-                REGISTRY_REMOTE_SERVER_GRPC_PREFIX + "max-connection-idle";
 
         public static final int DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE = 10 * 1024 * 1024;
 

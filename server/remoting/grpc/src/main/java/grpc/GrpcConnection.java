@@ -16,8 +16,7 @@
  */
 package grpc;
 
-import com.alipay.sofa.registry.core.grpc.Payload;
-import com.alipay.sofa.registry.core.grpc.Request;
+import com.alipay.sofa.registry.core.grpc.auto.Payload;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import io.grpc.StatusRuntimeException;

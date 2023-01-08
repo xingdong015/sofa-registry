@@ -14,8 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.core.grpc;
+package com.alipay.sofa.registry.core.grpc.auto;
 
+import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
 import com.alipay.sofa.registry.core.model.*;
 import java.util.HashMap;
 import java.util.Map;

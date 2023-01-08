@@ -16,8 +16,12 @@
  */
 package com.alipay.sofa.registry.core.grpc;
 
+import com.alipay.sofa.registry.core.grpc.auto.Payload;
+
 /**
  * @author chengzhengzheng
  * @date 2022/11/23
  */
-public class Response {}
+public class Response {
+
+}

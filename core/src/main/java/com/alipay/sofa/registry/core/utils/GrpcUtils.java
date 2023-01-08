@@ -17,23 +17,20 @@
 package com.alipay.sofa.registry.core.utils;
 
 import com.alipay.sofa.registry.core.grpc.*;
+import com.alipay.sofa.registry.core.grpc.auto.Metadata;
+import com.alipay.sofa.registry.core.grpc.auto.Payload;
+import com.alipay.sofa.registry.core.grpc.auto.PayloadRegistry;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 import java.nio.ByteBuffer;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author chengzhengzheng
  * @date 2022/11/23
  */
 public class GrpcUtils {
-
-  public static final ThreadPoolExecutor grpcServerExecutor =
-      new ThreadPoolExecutor(10, 10, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
   public static Object parse(Payload payload) {
     Class classType = PayloadRegistry.getClassByType(payload.getMetadata().getType());

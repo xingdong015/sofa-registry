@@ -16,8 +16,6 @@
  */
 package grpc;
 
-import com.alipay.sofa.registry.core.grpc.Request;
-
 import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;

@@ -17,8 +17,8 @@
 package com.alipay.sofa.registry.client.grpc;
 
 import com.alipay.sofa.registry.client.remoting.ServerNode;
-import com.alipay.sofa.registry.core.grpc.Payload;
-import com.alipay.sofa.registry.core.grpc.RequestGrpc;
+import com.alipay.sofa.registry.core.grpc.auto.Payload;
+import com.alipay.sofa.registry.core.grpc.auto.RequestGrpc;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.ManagedChannel;

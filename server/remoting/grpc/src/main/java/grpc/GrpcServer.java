@@ -18,8 +18,7 @@ package grpc;
 
 import com.alipay.remoting.Url;
 import com.alipay.sofa.registry.common.model.store.URL;
-import com.alipay.sofa.registry.core.grpc.Payload;
-import com.alipay.sofa.registry.core.utils.GrpcUtils;
+import com.alipay.sofa.registry.core.grpc.auto.Payload;
 import com.alipay.sofa.registry.log.Logger;
 import com.alipay.sofa.registry.log.LoggerFactory;
 import com.alipay.sofa.registry.remoting.CallbackHandler;
@@ -55,9 +54,6 @@ public class GrpcServer implements Server {
 
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
-    /**
-     * accoding server port can not be null
-     */
     protected final URL url;
 
     private final List<ChannelHandler> handlers;
@@ -79,7 +75,7 @@ public class GrpcServer implements Server {
         addServices(handlerRegistry, new ConnectionInterceptor());
         // todo 参考 https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md
         return ServerBuilder.forPort(url.getPort())
-                .executor(GrpcUtils.grpcServerExecutor)
+                .executor(GrpcServerConstants.GrpcConfig.GRPC_SERVER_THREAD_POOL_EXECUTOR)
                 .maxInboundMessageSize(getMaxInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
                 .compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
@@ -141,7 +137,7 @@ public class GrpcServer implements Server {
 
     @Override
     public InetSocketAddress getLocalAddress() {
-        return null;
+        return new InetSocketAddress(url.getPort());
     }
 
     @Override
@@ -227,7 +223,14 @@ public class GrpcServer implements Server {
 
     @Override
     public int getChannelCount() {
-        return 0;
+        Map<String, Connection>                                conns   = connectionManager.getAll();
+        int                                                    count = 0;
+        for (Connection conn : conns.values()) {
+            if (conn.isConnected()){
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override
@@ -241,8 +244,9 @@ public class GrpcServer implements Server {
     @Override
     public Object sendSync(Channel channel, Object message, int timeoutMillis) {
         Connection connection = connectionManager.getConnection("1");
-        //使用 GrpcConnection 发送消息
-        return null;
+        if (connection != null){
+            connection.sendRequest(message);
+        }
     }
 
     public void startServer() {

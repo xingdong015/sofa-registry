@@ -24,6 +24,7 @@ import java.util.Map;
  * @date 2022/11/20
  */
 public class RequestHandlerRegistry {
+
   Map<String, GrpcUserProcessorAdapter> registryHandlers = new HashMap<>();
 
   /**

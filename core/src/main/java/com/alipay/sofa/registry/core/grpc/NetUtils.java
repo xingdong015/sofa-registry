@@ -30,12 +30,12 @@ public class NetUtils {
 
   @Deprecated
   private static final String CLIENT_NAMING_LOCAL_IP_PROPERTY =
-      "com.alibaba.nacos.client.naming.local.ip";
+      "com.alibaba.registry.client.naming.local.ip";
 
-  private static final String CLIENT_LOCAL_IP_PROPERTY = "com.alibaba.nacos.client.local.ip";
+  private static final String CLIENT_LOCAL_IP_PROPERTY = "com.alibaba.registry.client.local.ip";
 
   private static final String CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY =
-      "com.alibaba.nacos.client.local.preferHostname";
+      "com.alibaba.registry.client.local.preferHostname";
 
   private static final String LEGAL_LOCAL_IP_PROPERTY = "java.net.preferIPv6Addresses";
 

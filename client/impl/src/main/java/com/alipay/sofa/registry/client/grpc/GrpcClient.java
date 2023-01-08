@@ -30,6 +30,9 @@ import com.alipay.sofa.registry.client.task.TaskEvent;
 import com.alipay.sofa.registry.client.task.Worker;
 import com.alipay.sofa.registry.client.task.WorkerThread;
 import com.alipay.sofa.registry.core.grpc.*;
+import com.alipay.sofa.registry.core.grpc.auto.BiRequestStreamGrpc;
+import com.alipay.sofa.registry.core.grpc.auto.Payload;
+import com.alipay.sofa.registry.core.grpc.auto.RequestGrpc;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import io.grpc.*;
 import io.grpc.stub.StreamObserver;
@@ -123,8 +126,8 @@ public class GrpcClient implements Client {
         return null;
       }
       ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-      Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
-      Payload response = requestBlockingStub.request(grpcRequest);
+      Payload            grpcRequest        = GrpcUtils.convert(serverCheckRequest);
+      Payload            response           = requestBlockingStub.request(grpcRequest);
       return GrpcUtils.parse(response, ServerCheckResponse.class);
     } catch (Exception e) {
       LOGGER.error(
