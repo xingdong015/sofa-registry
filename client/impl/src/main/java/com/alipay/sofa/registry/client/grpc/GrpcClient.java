@@ -93,6 +93,7 @@ public class GrpcClient implements Client {
     while (startUpRetryTimes > 0 && connectToServer == null) {
       try {
         startUpRetryTimes--;
+        //todo 从meta节点获取grpc服务节点。 心跳，session节点上报心跳的时候、需要上报协议、以及提供服务的端口信息。
         List<ServerNode> serverNodes = new ArrayList<>(serverManager.getServerList());
         if (CollectionUtils.isEmpty(serverNodes)) {
           break;

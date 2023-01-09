@@ -133,6 +133,8 @@ public class SessionServerBootstrap {
 
   private final AtomicBoolean serverStart = new AtomicBoolean(false);
 
+  private final AtomicBoolean grpServerStart = new AtomicBoolean(false);
+
   private final AtomicBoolean dataStart = new AtomicBoolean(false);
 
   private final AtomicBoolean serverForSessionSyncStart = new AtomicBoolean(false);
@@ -286,17 +288,17 @@ public class SessionServerBootstrap {
 
   private void openGrpcSessionServer() {
     try {
-      if (serverStart.compareAndSet(false, true)) {
+      if (grpServerStart.compareAndSet(false, true)) {
         server =
             grpcExchange.open(
                 new URL(
                     NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getServerPort()),
+                    sessionServerConfig.getServerPort() + 100),
                 grpcServerHandlers.toArray(new ChannelHandler[grpcServerHandlers.size()]));
-        LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort());
+        LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort() + 100);
       }
     } catch (Exception e) {
-      serverStart.set(false);
+      grpServerStart.set(false);
       LOGGER.error(
           "Session grpc server start error! port:{}", sessionServerConfig.getServerPort(), e);
       throw new RuntimeException("Session grpc server start error!", e);

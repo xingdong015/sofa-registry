@@ -36,8 +36,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version v 0.1 2020-12-18 11:40 yuzhi.lyz Exp $
  */
 public abstract class ServerSideExchanger implements NodeExchanger {
-  @Autowired
-  private BoltExchange boltExchange;
+
+  @Autowired protected Exchange boltExchange;
+
   @Override
   public Response request(Request request) throws RequestException {
     final URL url = request.getRequestUrl();
