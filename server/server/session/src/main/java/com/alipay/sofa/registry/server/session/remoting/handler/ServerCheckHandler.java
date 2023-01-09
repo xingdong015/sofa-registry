@@ -17,8 +17,8 @@
 package com.alipay.sofa.registry.server.session.remoting.handler;
 
 import com.alibaba.fastjson.JSON;
-import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
-import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
+import com.alipay.sofa.registry.core.grpc.request.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.response.ServerCheckResponse;
 import com.alipay.sofa.registry.remoting.Channel;
 import grpc.GrpcChannel;
 

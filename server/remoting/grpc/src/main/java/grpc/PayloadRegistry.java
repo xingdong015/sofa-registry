@@ -16,7 +16,7 @@
  */
 package grpc;
 
-import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.request.ServerCheckRequest;
 import com.alipay.sofa.registry.core.model.PublisherRegister;
 import com.alipay.sofa.registry.core.model.SubscriberRegister;
 import java.lang.reflect.Modifier;

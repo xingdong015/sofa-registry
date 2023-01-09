@@ -1,6 +1,8 @@
 package grpc;
 
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
+import com.alipay.sofa.registry.core.grpc.response.Response;
+import com.alipay.sofa.registry.remoting.RemotingException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,34 +25,25 @@ public class RpcAckCallbackSynchronizer {
 
         Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (stringDefaultPushFutureMap == null) {
-
-            Loggers.REMOTE_DIGEST
-                    .warn("Ack receive on a outdated connection ,connection id={},requestId={} ", connectionId,
-                            response.getRequestId());
             return;
         }
 
         DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(response.getRequestId());
         if (currentCallback == null) {
-
-            Loggers.REMOTE_DIGEST
-                    .warn("Ack receive on a outdated request ,connection id={},requestId={} ", connectionId,
-                            response.getRequestId());
             return;
         }
 
         if (response.isSuccess()) {
             currentCallback.setResponse(response);
         } else {
-            currentCallback.setFailResult(new NacosException(response.getErrorCode(), response.getMessage()));
+            currentCallback.setFailResult(new RemotingException(response.getMessage()));
         }
     }
 
     /**
      * notify  ackid.
      */
-    public static void syncCallback(String connectionId, String requestId, DefaultRequestFuture defaultPushFuture)
-            throws NacosException {
+    public static void syncCallback(String connectionId, String requestId, DefaultRequestFuture defaultPushFuture) {
 
         Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = initContextIfNecessary(connectionId);
 
@@ -61,8 +54,7 @@ public class RpcAckCallbackSynchronizer {
                 return;
             }
         }
-        throw new NacosException(NacosException.INVALID_PARAM, "request id conflict");
-
+        throw new RuntimeException();
     }
 
     /**

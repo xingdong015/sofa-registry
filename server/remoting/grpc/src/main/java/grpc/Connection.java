@@ -16,6 +16,9 @@
  */
 package grpc;
 
+import com.alipay.sofa.registry.core.grpc.request.Request;
+import com.alipay.sofa.registry.core.grpc.response.Response;
+
 import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;
@@ -123,5 +126,9 @@ public abstract class Connection {
         + '}';
   }
 
-  protected abstract void sendRequest(Object request);
+  public abstract RequestFuture requestFuture(Request request) ;
+
+  public abstract Response request(Request request, long timeouts);
+
+  public abstract void asyncRequest(Request request, RequestCallBack requestCallBack);
 }

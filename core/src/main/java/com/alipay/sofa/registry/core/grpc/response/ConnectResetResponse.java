@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.core.grpc;
+package com.alipay.sofa.registry.core.grpc.response;
 
 /**
  * @author chengzhengzheng
  * @date 2022/11/24
  */
-public class ConnectResetResponse {}
+public class ConnectResetResponse extends Response{
+
+}

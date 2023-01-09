@@ -31,8 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2022/11/20
  */
 public class ConnectionManager {
-  private static final int MAX_TIMES = 5;
-  private final Random random = new Random();
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
 

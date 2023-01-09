@@ -1,7 +1,7 @@
 package grpc;
 
 
-import com.alipay.sofa.registry.core.grpc.Response;
+import com.alipay.sofa.registry.core.grpc.response.Response;
 
 /**
  * @author chengzhengzheng

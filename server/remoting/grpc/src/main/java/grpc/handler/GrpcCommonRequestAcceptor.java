@@ -19,8 +19,8 @@ package grpc.handler;
 
 import com.alipay.sofa.registry.core.grpc.auto.Payload;
 import com.alipay.sofa.registry.core.grpc.auto.RequestGrpc;
-import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
-import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
+import com.alipay.sofa.registry.core.grpc.request.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.response.ServerCheckResponse;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import grpc.*;
 import io.grpc.stub.StreamObserver;

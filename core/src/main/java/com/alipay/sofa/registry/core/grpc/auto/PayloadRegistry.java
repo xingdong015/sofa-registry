@@ -16,9 +16,9 @@
  */
 package com.alipay.sofa.registry.core.grpc.auto;
 
-import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
-import com.alipay.sofa.registry.core.grpc.ServerCheckRequest;
-import com.alipay.sofa.registry.core.grpc.ServerCheckResponse;
+import com.alipay.sofa.registry.core.grpc.request.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.request.ServerCheckRequest;
+import com.alipay.sofa.registry.core.grpc.response.ServerCheckResponse;
 import com.alipay.sofa.registry.core.model.*;
 import java.util.HashMap;
 import java.util.Map;

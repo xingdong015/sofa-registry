@@ -16,8 +16,8 @@
  */
 package com.alipay.sofa.registry.client.grpc;
 
-import com.alipay.sofa.registry.core.grpc.ConnectResetResponse;
-import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.response.ConnectResetResponse;
+import com.alipay.sofa.registry.core.grpc.request.ConnectionSetupRequest;
 
 /**
  * @author chengzhengzheng

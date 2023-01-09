@@ -14,14 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.core.grpc;
-
-import com.alipay.sofa.registry.core.grpc.auto.Payload;
+package com.alipay.sofa.registry.core.grpc.response;
 
 /**
  * @author chengzhengzheng
  * @date 2022/11/23
  */
-public class Response {
+public class ServerCheckResponse extends Response{
+  private String connectionId;
 
+  public ServerCheckResponse() {}
+
+  public ServerCheckResponse(String connectionId) {
+    this.connectionId = connectionId;
+  }
+
+  public String getConnectionId() {
+    return connectionId;
+  }
+
+  public void setConnectionId(String connectionId) {
+    this.connectionId = connectionId;
+  }
 }

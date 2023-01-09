@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.core.grpc;
+package com.alipay.sofa.registry.core.utils;
 
 import io.grpc.netty.shaded.io.netty.util.internal.StringUtil;
 import java.io.IOException;

@@ -17,6 +17,8 @@
 package grpc;
 
 import com.alipay.sofa.registry.core.grpc.auto.Payload;
+import com.alipay.sofa.registry.core.grpc.request.Request;
+import com.alipay.sofa.registry.core.grpc.response.Response;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import io.grpc.StatusRuntimeException;
@@ -68,8 +70,43 @@ public class GrpcConnection extends Connection {
     }
 
 
+
     @Override
-    protected void sendRequest(Object request)  {
+    public RequestFuture requestFuture(Request request) {
+        return sendRequestInner(request, null);
+    }
+
+    @Override
+    public Response request(Request request, long timeoutMills)  {
+        DefaultRequestFuture pushFuture = sendRequestInner(request, null);
+        try {
+            return pushFuture.get(timeoutMills);
+        } catch (Exception e) {
+            throw new RuntimeException();
+        } finally {
+            RpcAckCallbackSynchronizer.clearFuture(getConnectionId(), pushFuture.getRequestId());
+        }
+    }
+
+    @Override
+    public void asyncRequest(Request request, RequestCallBack requestCallBack) {
+        sendRequestInner(request, requestCallBack);
+    }
+
+    private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack) {
+        final String requestId = String.valueOf(PushAckIdGenerator.getNextId());
+        request.setRequestId(requestId);
+
+        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(getConnectionId(), requestId,
+                callBack, () -> RpcAckCallbackSynchronizer.clearFuture(getConnectionId(), requestId));
+
+        RpcAckCallbackSynchronizer.syncCallback(getConnectionId(), requestId, defaultPushFuture);
+
+        sendRequestNoAck(request);
+        return defaultPushFuture;
+    }
+
+    private void sendRequestNoAck(Object request) {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {

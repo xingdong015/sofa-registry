@@ -17,7 +17,7 @@
 package grpc.handler;
 
 import com.alipay.sofa.registry.core.grpc.auto.BiRequestStreamGrpc;
-import com.alipay.sofa.registry.core.grpc.ConnectionSetupRequest;
+import com.alipay.sofa.registry.core.grpc.request.ConnectionSetupRequest;
 import com.alipay.sofa.registry.core.grpc.auto.Payload;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import grpc.*;

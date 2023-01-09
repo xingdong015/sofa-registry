@@ -16,10 +16,10 @@
  */
 package com.alipay.sofa.registry.core.utils;
 
-import com.alipay.sofa.registry.core.grpc.*;
 import com.alipay.sofa.registry.core.grpc.auto.Metadata;
 import com.alipay.sofa.registry.core.grpc.auto.Payload;
 import com.alipay.sofa.registry.core.grpc.auto.PayloadRegistry;
+import com.alipay.sofa.registry.core.grpc.response.ServerCheckResponse;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;

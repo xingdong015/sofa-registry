@@ -19,6 +19,8 @@ package grpc;
 import com.alipay.remoting.Url;
 import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.core.grpc.auto.Payload;
+import com.alipay.sofa.registry.core.grpc.request.Request;
+import com.alipay.sofa.registry.core.grpc.response.Response;
 import com.alipay.sofa.registry.log.Logger;
 import com.alipay.sofa.registry.log.LoggerFactory;
 import com.alipay.sofa.registry.remoting.CallbackHandler;
@@ -39,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -168,7 +171,7 @@ public class GrpcServer implements Server {
 
     @Override
     public List<Channel> getChannels() {
-        Map<String, Connection>                           conns   = connectionManager.getAll();
+        Map<String, Connection> conns = connectionManager.getAll();
         if (conns.isEmpty()) {
             return Collections.emptyList();
         }
@@ -214,8 +217,8 @@ public class GrpcServer implements Server {
         if (channel == null) {
             return;
         }
-        GrpcChannel                    boltChannel = (GrpcChannel) channel;
-        Connection                     connection  = boltChannel.getConnection();
+        GrpcChannel boltChannel = (GrpcChannel) channel;
+        Connection  connection  = boltChannel.getConnection();
         if (connection.isConnected()) {
             connection.close();
         }
@@ -223,10 +226,10 @@ public class GrpcServer implements Server {
 
     @Override
     public int getChannelCount() {
-        Map<String, Connection>                                conns   = connectionManager.getAll();
-        int                                                    count = 0;
+        Map<String, Connection> conns = connectionManager.getAll();
+        int                     count = 0;
         for (Connection conn : conns.values()) {
-            if (conn.isConnected()){
+            if (conn.isConnected()) {
                 count++;
             }
         }
@@ -234,19 +237,26 @@ public class GrpcServer implements Server {
     }
 
     @Override
-    public void sendCallback(
-            Channel channel, Object message, CallbackHandler callbackHandler, int timeoutMillis) {
+    public void sendCallback(Channel channel, Object message, CallbackHandler callbackHandler, int timeoutMillis) {
         Url        key        = new Url(url.getIpAddress(), url.getPort());
         Connection connection = connectionManager.getConnection(key.getUniqueKey());
-        connection.sendRequest(message);
+        if (connection == null) {
+            throw new RuntimeException();
+        }
+        connection.asyncRequest((Request) message, new Sofa2GrpcCallbackConverter(channel, callbackHandler, timeoutMillis));
     }
+
 
     @Override
     public Object sendSync(Channel channel, Object message, int timeoutMillis) {
         Connection connection = connectionManager.getConnection("1");
-        if (connection != null){
-            connection.sendRequest(message);
+        if (connection == null) {
+            throw new RuntimeException();
         }
+        if (message instanceof Request) {
+            return connection.request((Request) message, timeoutMillis);
+        }
+        throw new RuntimeException();
     }
 
     public void startServer() {
@@ -264,7 +274,7 @@ public class GrpcServer implements Server {
                 }));
             } catch (Exception e) {
                 isStarted.set(false);
-                throw new RuntimeException("Start bolt server error!", e);
+                throw new RuntimeException("Start grpc server error!", e);
             }
         }
     }
@@ -272,8 +282,8 @@ public class GrpcServer implements Server {
     private void initHandle() {
         for (ChannelHandler channelHandler : handlers) {
             if (ChannelHandler.HandlerType.PROCESSER.equals(channelHandler.getType())) {
-                Class<?> clazz = channelHandler.getClass();
-                Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+                Class<?> clazz  = channelHandler.getClass();
+                Class    tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
                 requestHandlerRegistry.registryHandler(tClass.getSimpleName(), newSyncUserProcessorAdapter(channelHandler));
             }
         }
@@ -306,5 +316,37 @@ public class GrpcServer implements Server {
             return Integer.parseInt(propertyStr);
         }
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE;
+    }
+
+    class Sofa2GrpcCallbackConverter implements RequestCallBack {
+        private final Channel         channel;
+        private final CallbackHandler callbackHandler;
+        private       int             timeoutMillis;
+
+        Sofa2GrpcCallbackConverter(Channel channel, CallbackHandler callbackHandler, int timeoutMillis) {
+            this.channel         = channel;
+            this.callbackHandler = callbackHandler;
+            this.timeoutMillis   = timeoutMillis;
+        }
+
+        @Override
+        public Executor getExecutor() {
+            return callbackHandler.getExecutor();
+        }
+
+        @Override
+        public long getTimeout() {
+            return timeoutMillis;
+        }
+
+        @Override
+        public void onResponse(Response response) {
+            callbackHandler.onCallback(channel, response);
+        }
+
+        @Override
+        public void onException(Throwable e) {
+            callbackHandler.onException(channel, e);
+        }
     }
 }

@@ -1,7 +1,7 @@
 package grpc;
 
 import com.alipay.remoting.TimerHolder;
-import com.alipay.sofa.registry.core.grpc.Response;
+import com.alipay.sofa.registry.core.grpc.response.Response;
 import io.netty.util.Timeout;
 
 import java.util.concurrent.TimeUnit;
@@ -124,7 +124,6 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-
         callBacInvoke();
     }
 
@@ -158,5 +157,9 @@ public class DefaultRequestFuture implements RequestFuture {
         }
 
         callBacInvoke();
+    }
+
+    public String getRequestId() {
+        return requestId;
     }
 }

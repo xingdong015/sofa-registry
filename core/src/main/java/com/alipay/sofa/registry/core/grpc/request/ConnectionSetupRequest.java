@@ -14,10 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.core.grpc;
+package com.alipay.sofa.registry.core.grpc.request;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author chengzhengzheng
- * @date 2022/11/23
+ * @date 2022/11/20
  */
-public class ServerCheckRequest {}
+public class ConnectionSetupRequest {
+
+  private String clientVersion;
+
+  private Map<String, String> attributes = new HashMap<>();
+
+  public ConnectionSetupRequest() {}
+
+  public String getClientVersion() {
+    return clientVersion;
+  }
+
+  public void setClientVersion(String clientVersion) {
+    this.clientVersion = clientVersion;
+  }
+
+  public Map<String, String> getAttributes() {
+    return attributes;
+  }
+
+  public void setAttributes(Map<String, String> labels) {
+    this.attributes = labels;
+  }
+}
