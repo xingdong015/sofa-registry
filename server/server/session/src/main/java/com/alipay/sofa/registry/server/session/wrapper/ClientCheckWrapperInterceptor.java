@@ -24,7 +24,7 @@ import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Server;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
-import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
+import com.alipay.sofa.registry.server.shared.remoting.ProtocolManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -38,7 +38,7 @@ public class ClientCheckWrapperInterceptor
 
   @Autowired private SessionServerConfig sessionServerConfig;
 
-  @Autowired private ExchangeManager exchangeManager;
+  @Autowired private ProtocolManager protocolManager;
 
   @Override
   public Boolean invokeCodeWrapper(WrapperInvocation<RegisterInvokeData, Boolean> invocation)
@@ -50,7 +50,7 @@ public class ClientCheckWrapperInterceptor
     URL address = baseInfo.getSourceAddress();
     URL.ProtocolType protocol = address.getProtocol();
     Server sessionServer =
-        exchangeManager
+        protocolManager
             .getExchangeByPrototype(protocol)
             .getServer(sessionServerConfig.getServerPort());
 

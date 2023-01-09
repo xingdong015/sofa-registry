@@ -47,7 +47,7 @@ import com.alipay.sofa.registry.server.session.strategy.SessionRegistryStrategy;
 import com.alipay.sofa.registry.server.session.wrapper.RegisterInvokeData;
 import com.alipay.sofa.registry.server.session.wrapper.WrapperInterceptorManager;
 import com.alipay.sofa.registry.server.shared.env.ServerEnv;
-import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
+import com.alipay.sofa.registry.server.shared.remoting.ProtocolManager;
 import com.alipay.sofa.registry.util.ConcurrentUtils;
 import com.alipay.sofa.registry.util.LoopRunnable;
 import com.alipay.sofa.registry.util.StringFormatter;
@@ -90,7 +90,7 @@ public class SessionRegistry implements Registry {
 
   @Autowired protected PushSwitchService pushSwitchService;
 
-  @Autowired protected ExchangeManager exchangeManager;
+  @Autowired protected ProtocolManager protocolManager;
 
   @Autowired protected SessionRegistryStrategy sessionRegistryStrategy;
 
@@ -612,7 +612,7 @@ public class SessionRegistry implements Registry {
   public void cleanClientConnect() {
 
     Server sessionServer =
-        exchangeManager
+        protocolManager
             .getExchangeByPrototype(URL.ProtocolType.BOLT)
             .getServer(sessionServerConfig.getServerPort());
     if (sessionServer == null) {

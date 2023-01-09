@@ -51,6 +51,7 @@ import com.alipay.sofa.registry.server.meta.resource.*;
 import com.alipay.sofa.registry.server.meta.resource.filter.LeaderAwareFilter;
 import com.alipay.sofa.registry.server.meta.slot.status.SlotTableStatusService;
 import com.alipay.sofa.registry.server.shared.remoting.AbstractServerHandler;
+import com.alipay.sofa.registry.server.shared.remoting.ProtocolManager;
 import com.alipay.sofa.registry.server.shared.resource.MetricsResource;
 import com.alipay.sofa.registry.server.shared.resource.SlotGenericResource;
 import com.alipay.sofa.registry.server.shared.resource.VersionResource;
@@ -68,6 +69,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import grpc.exchange.GrpcExchange;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

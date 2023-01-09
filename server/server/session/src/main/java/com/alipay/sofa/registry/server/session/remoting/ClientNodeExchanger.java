@@ -16,7 +16,10 @@
  */
 package com.alipay.sofa.registry.server.session.remoting;
 
+import com.alipay.sofa.registry.common.model.store.URL;
+import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
+import com.alipay.sofa.registry.server.shared.remoting.ProtocolManager;
 import com.alipay.sofa.registry.server.shared.remoting.ServerSideExchanger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -27,6 +30,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ClientNodeExchanger extends ServerSideExchanger {
 
   @Autowired private SessionServerConfig sessionServerConfig;
+
+  @Autowired private ProtocolManager protocolManager;
+
+  @Override
+  protected Exchange getExchange(URL.ProtocolType protocol) {
+    return protocolManager.getExchangeByPrototype(protocol);
+  }
 
   @Override
   public int getRpcTimeoutMillis() {

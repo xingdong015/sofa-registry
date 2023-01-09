@@ -71,7 +71,7 @@ import com.alipay.sofa.registry.server.shared.providedata.ProvideDataProcessor;
 import com.alipay.sofa.registry.server.shared.providedata.SystemPropertyProcessorManager;
 import com.alipay.sofa.registry.server.shared.remoting.AbstractClientHandler;
 import com.alipay.sofa.registry.server.shared.remoting.AbstractServerHandler;
-import com.alipay.sofa.registry.server.shared.remoting.ExchangeManager;
+import com.alipay.sofa.registry.server.shared.remoting.ProtocolManager;
 import com.alipay.sofa.registry.server.shared.remoting.SlotTableChangeEventHandler;
 import com.alipay.sofa.registry.server.shared.resource.MetricsResource;
 import com.alipay.sofa.registry.server.shared.resource.RegistryOpsResource;
@@ -162,8 +162,8 @@ public class SessionServerConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = "exchangeManager")
-    public ExchangeManager exchangeManager() {
-      return new ExchangeManager();
+    public ProtocolManager exchangeManager() {
+      return new ProtocolManager();
     }
 
     @Bean

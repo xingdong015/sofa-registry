@@ -173,7 +173,6 @@ public class SessionServerBootstrap {
       // wait until slot table is get
       startupRetryer.call(
           () -> slotTableCache.getCurrentSlotTable().getEpoch() != SlotTable.INIT.getEpoch());
-      // todo
       recoverConfigRepository.waitSynced();
       metadataCacheRegistry.waitSynced();
       clientManagerAddressRepository.waitSynced();
@@ -183,11 +182,11 @@ public class SessionServerBootstrap {
 
       startScheduler();
 
-      openHttpServer(); // http 服务 心跳检测。todo
+      openHttpServer();
 
       startupRetryer.call(
           () -> {
-            connectDataServer(); // bolt 不动
+            connectDataServer();
             return true;
           });
 
@@ -195,7 +194,7 @@ public class SessionServerBootstrap {
       configProvideDataWatcher.start();
       registerSerializer();
       openConsoleServer();
-      openConsoleServer(); // 不动
+      openConsoleServer();
       openSessionServer();
       openGrpcSessionServer();
 
