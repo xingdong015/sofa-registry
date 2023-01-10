@@ -293,9 +293,9 @@ public class SessionServerBootstrap {
             grpcExchange.open(
                 new URL(
                     NetUtil.getLocalAddress().getHostAddress(),
-                    sessionServerConfig.getServerPort() + 100),
+                    sessionServerConfig.getGrpcServerPort()),
                 grpcServerHandlers.toArray(new ChannelHandler[grpcServerHandlers.size()]));
-        LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getServerPort() + 100);
+        LOGGER.info("Session grpc server started! port:{}", sessionServerConfig.getGrpcServerPort());
       }
     } catch (Exception e) {
       grpServerStart.set(false);

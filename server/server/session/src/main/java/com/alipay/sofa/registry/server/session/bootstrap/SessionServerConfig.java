@@ -29,6 +29,8 @@ public interface SessionServerConfig extends ServerShareConfig {
 
   int getServerPort();
 
+  int getGrpcServerPort();
+
   int getSyncSessionPort();
 
   int getConsolePort();

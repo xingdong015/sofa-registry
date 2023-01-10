@@ -17,12 +17,14 @@
 package com.alipay.sofa.registry.server.session.resource;
 
 import com.alipay.sofa.registry.common.model.slot.Slot;
+import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.server.session.bootstrap.SessionServerConfig;
 import com.alipay.sofa.registry.server.session.slot.SlotTableCache;
 import com.alipay.sofa.registry.server.shared.meta.MetaServerService;
 import com.alipay.sofa.registry.util.ParaCheckUtil;
 import com.google.common.base.Joiner;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -45,7 +47,7 @@ public class SessionOpenResource {
   @GET
   @Path("query.json")
   @Produces(MediaType.APPLICATION_JSON)
-  public List<String> getSessionServerListJson(@QueryParam("zone") String zone) {
+  public List<String> getSessionServerListJson(@QueryParam("zone") String zone,@QueryParam("protocol") String protocol) {
     if (StringUtils.isBlank(zone)) {
       zone = sessionServerConfig.getSessionServerRegion();
     }
@@ -53,14 +55,19 @@ public class SessionOpenResource {
     if (StringUtils.isNotBlank(zone)) {
       zone = zone.toUpperCase();
     }
-    return getSessionServers(zone);
+
+    URL.ProtocolType protocolType = URL.ProtocolType.valueOf(protocol);
+    if (Objects.isNull(protocolType)){
+      protocolType = URL.ProtocolType.BOLT;
+    }
+    return getSessionServers(zone,protocolType);
   }
 
   @GET
   @Path("query")
   @Produces(MediaType.TEXT_PLAIN)
-  public String getSessionServerList(@QueryParam("zone") String zone) {
-    return Joiner.on(";").join(getSessionServerListJson(zone));
+  public String getSessionServerList(@QueryParam("zone") String zone ,@QueryParam("protocol") String protocol) {
+    return Joiner.on(";").join(getSessionServerListJson(zone,protocol));
   }
 
   @GET
@@ -78,15 +85,16 @@ public class SessionOpenResource {
   @Path("dataCenter")
   @Produces(MediaType.APPLICATION_JSON)
   public List<String> getCurrentDataCenterServerList() {
-    return getSessionServers(null);
+    return getSessionServers(null, URL.ProtocolType.BOLT);
   }
 
-  private List<String> getSessionServers(String zone) {
+  private List<String> getSessionServers(String zone,URL.ProtocolType protocolType) {
     List<String> serverList = metaNodeService.getSessionServerList(zone);
 
     serverList =
         serverList.stream()
-            .map(server -> server + ":" + sessionServerConfig.getServerPort())
+            .map(server -> server + ":" +
+                    (protocolType == URL.ProtocolType.BOLT ? sessionServerConfig.getServerPort() : sessionServerConfig.getGrpcServerPort()))
             .collect(Collectors.toList());
     return serverList;
   }

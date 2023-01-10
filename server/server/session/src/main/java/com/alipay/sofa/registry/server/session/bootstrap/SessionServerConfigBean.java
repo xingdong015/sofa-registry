@@ -46,6 +46,8 @@ public class SessionServerConfigBean implements SessionServerConfig {
 
   private int consolePort = 9604;
 
+  private int grpcServerPort = 9700;
+
   private int syncSessionIOLowWaterMark = 1024 * 288;
 
   private int syncSessionIOHighWaterMark = 1024 * 320;
@@ -236,6 +238,11 @@ public class SessionServerConfigBean implements SessionServerConfig {
   @Override
   public int getServerPort() {
     return serverPort;
+  }
+
+  @Override
+  public int getGrpcServerPort() {
+    return grpcServerPort;
   }
 
   @Override

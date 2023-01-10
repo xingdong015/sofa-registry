@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.alipay.sofa.registry.common.model.store.URL;
 import org.slf4j.Logger;
 
 /**
@@ -98,6 +100,7 @@ public class DefaultServerManager implements ServerManager {
     params.put("dataCenter", config.getDataCenter());
     params.put("appName", config.getAppName());
     params.put("instanceId", config.getInstanceId());
+    params.put("protocol", URL.ProtocolType.GRPC.name());//写死
     try {
       String result = HttpClientUtils.get(url, params, config);
       if (null != result) {
