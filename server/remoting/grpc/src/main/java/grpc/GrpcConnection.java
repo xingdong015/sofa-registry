@@ -22,6 +22,7 @@ import com.alipay.sofa.registry.core.grpc.response.Response;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
 
 import java.util.Map;
@@ -35,6 +36,8 @@ public class GrpcConnection extends Connection {
 
     private final ServerCallStreamObserver streamObserver;
 
+    private Channel channel;
+
     public GrpcConnection(
             String connectionId,
             String clientIp,
@@ -43,9 +46,11 @@ public class GrpcConnection extends Connection {
             int remotePort,
             String version,
             Map<String, String> attributes,
-            ServerCallStreamObserver streamObserver) {
+            ServerCallStreamObserver streamObserver,
+            Channel channel) {
         super(connectionId, clientIp, localPort, remoteIp, remotePort, version, attributes);
         this.streamObserver = streamObserver;
+        this.channel        = channel;
     }
 
     @Override
@@ -57,6 +62,8 @@ public class GrpcConnection extends Connection {
     public void close() {
         try {
             closeBiStream();
+
+            channel.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -70,14 +77,13 @@ public class GrpcConnection extends Connection {
     }
 
 
-
     @Override
     public RequestFuture requestFuture(Request request) {
         return sendRequestInner(request, null);
     }
 
     @Override
-    public Response request(Request request, long timeoutMills)  {
+    public Response request(Request request, long timeoutMills) {
         DefaultRequestFuture pushFuture = sendRequestInner(request, null);
         try {
             return pushFuture.get(timeoutMills);

@@ -6,6 +6,7 @@ import io.grpc.Context;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
 
 /**
  * @author chengzhengzheng
@@ -19,6 +20,8 @@ public class GrpcServerConstants {
     public static final Attributes.Key<Integer> ATTR_TRANS_KEY_REMOTE_PORT = Attributes.Key.create("remote_port");
 
     public static final Attributes.Key<Integer> ATTR_TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
+
+    public static final Context.Key<Channel> CONTEXT_KEY_CHANNEL = Context.key("ctx_channel");
 
     public static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
 

@@ -264,6 +264,9 @@ public class GrpcClient implements Client {
     String host = serverNode.getHost();
     int port = serverNode.getPort();
     try {
+      // todo 因为这块一个channel是根据ip和port绑定的、这个ip和port是从meta获取的。所以当连接不可用的
+      // 时候、server端必须关闭 channel、而不是仅仅关闭 channel里面的connection
+      // 参考 https://github.com/alibaba/nacos/pull/9788
       ManagedChannel managedChannel = createNewManagedChannel(host, port);
       // 是否需要初始化 managedChannel 连接服务端
       // https://stackoverflow.com/questions/43284217/getting-connection-state-for-grpc
