@@ -36,6 +36,7 @@ import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 
 import java.lang.reflect.ParameterizedType;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
@@ -238,12 +239,19 @@ public class GrpcServer implements Server {
 
     @Override
     public void sendCallback(Channel channel, Object message, CallbackHandler callbackHandler, int timeoutMillis) {
-        Url        key        = new Url(url.getIpAddress(), url.getPort());
-        Connection connection = connectionManager.getConnection(key.getUniqueKey());
+        Url grpcUrl = GrpcServer.createTargetUrl(channel);
+        Connection connection = connectionManager.getConnection(grpcUrl.getUniqueKey());
         if (connection == null) {
             throw new RuntimeException();
         }
+        //build request对象
         connection.asyncRequest((Request) message, new Sofa2GrpcCallbackConverter(channel, callbackHandler, timeoutMillis));
+    }
+
+    public static Url createTargetUrl(Channel channel) {
+        return new Url(
+                channel.getRemoteAddress().getAddress().getHostAddress(),
+                channel.getRemoteAddress().getPort());
     }
 
 

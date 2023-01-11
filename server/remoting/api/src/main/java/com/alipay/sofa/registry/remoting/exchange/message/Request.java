@@ -54,4 +54,10 @@ public interface Request<T> {
   default Integer getTimeout() {
     return null;
   }
+
+  default URL.ProtocolType getProtocol() {
+    return URL.ProtocolType.BOLT;
+  }
+
+  ;
 }

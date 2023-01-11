@@ -67,6 +67,8 @@ public class DefaultSubscriberHandlerStrategy implements SubscriberHandlerStrate
 
       subscriber = SubscriberConverter.convert(subscriberRegister);
       subscriber.setProcessId(ip + ":" + port);
+      /** binding protocol **/
+      subscriber.setProtocolType(channel.getProtocolType());
 
       handle(subscriber, channel, subscriberRegister, registerResponse, fromPb);
     } catch (Throwable e) {
@@ -80,8 +82,6 @@ public class DefaultSubscriberHandlerStrategy implements SubscriberHandlerStrate
       SubscriberRegister subscriberRegister,
       RegisterResponse registerResponse,
       boolean pb) {
-    // 这块给 subscriber 的 sourceAddress 设置了 bolt 协议。
-    // todo 适配 grpc 协议
     InetSocketAddress address = channel.getRemoteAddress();
     subscriber.setSourceAddress(
         new URL(

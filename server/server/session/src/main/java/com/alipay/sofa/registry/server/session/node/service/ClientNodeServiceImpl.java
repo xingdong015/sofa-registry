@@ -31,23 +31,32 @@ public class ClientNodeServiceImpl implements ClientNodeService {
 
   @Override
   public void pushWithCallback(Object object, URL url, CallbackHandler callbackHandler) {
-    Request<Object> request =
-        new Request<Object>() {
-          @Override
-          public Object getRequestBody() {
-            return object;
-          }
-
-          @Override
-          public URL getRequestUrl() {
-            return url;
-          }
-
-          @Override
-          public CallbackHandler getCallBackHandler() {
-            return callbackHandler;
-          }
-        };
-    clientNodeExchanger.request(request);
+    pushWithCallback(object,url, URL.ProtocolType.BOLT,callbackHandler);
   }
+
+    @Override
+    public void pushWithCallback(Object object, URL url, URL.ProtocolType protocolType, CallbackHandler callbackHandler) {
+        Request<Object> request =
+                new Request<Object>() {
+                    @Override
+                    public Object getRequestBody() {
+                        return object;
+                    }
+
+                    @Override
+                    public URL getRequestUrl() {
+                        return url;
+                    }
+
+                    @Override
+                    public CallbackHandler getCallBackHandler() {
+                        return callbackHandler;
+                    }
+                    @Override
+                    public URL.ProtocolType getProtocol(){
+                        return protocolType;
+                    }
+                };
+        clientNodeExchanger.request(request);
+    }
 }

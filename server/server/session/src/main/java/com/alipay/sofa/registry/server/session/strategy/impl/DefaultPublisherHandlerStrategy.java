@@ -66,6 +66,8 @@ public class DefaultPublisherHandlerStrategy implements PublisherHandlerStrategy
 
       publisher = PublisherConverter.convert(publisherRegister);
       publisher.setProcessId(ip + ":" + port);
+      /** binding protocol **/
+      publisher.setProtocolType(channel.getProtocolType());
 
       handle(publisher, channel, publisherRegister, registerResponse, fromPb);
     } catch (Throwable e) {

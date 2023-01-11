@@ -65,6 +65,8 @@ public abstract class BaseInfo implements Serializable, StoreData<String> {
   private long clientRegisterTimestamp;
 
   private volatile Map<String, String> attributes;
+  private URL.ProtocolType protocolType;
+
 
   /** ClientVersion Enum */
   public enum ClientVersion {
@@ -398,6 +400,14 @@ public abstract class BaseInfo implements Serializable, StoreData<String> {
     return "";
   }
 
+  public void setProtocolType(URL.ProtocolType protocolType) {
+    this.protocolType = protocolType;
+  }
+
+  public URL.ProtocolType getProtocolType() {
+    return protocolType;
+  }
+
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder(getDataType().toString());
@@ -414,6 +424,7 @@ public abstract class BaseInfo implements Serializable, StoreData<String> {
     sb.append(", clientRegisterTimestamp=").append(clientRegisterTimestamp);
     sb.append(", otherInfo=").append(getOtherInfo());
     sb.append(", attributes=").append(attributes);
+    sb.append(", protocolType=").append(protocolType);
     sb.append('}');
     return sb.toString();
   }

@@ -48,10 +48,8 @@ public abstract class ServerSideExchanger implements NodeExchanger {
   }
 
   public Response request(URL url, Request request) throws RequestException {
-    // todo 如果开启grpc协议的话、这块是否需要使用 grpc 推送 根据协议选择不同的 exchange
-    URL.ProtocolType protocol = url.getProtocol();
-    // todo 必须是 session推送给client的时候才使用 grpc 、data推送给session仍然使用session
-    final Server server = getServer(protocol);
+    // todo 如果开启grpc协议的话、这块是否需要使用 grpc 推送 根据协议选择不同的 exchange 必须是 session推送给client的时候才使用 grpc 、data推送给session仍然使用session
+    final Server server = getServer(request.getProtocol());
     if (server == null) {
       throw new RequestException("no server for " + url + "," + getServerPort(), request);
     }

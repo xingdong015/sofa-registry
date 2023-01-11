@@ -55,7 +55,7 @@ public class GrpcConnection extends Connection {
 
     @Override
     public boolean isConnected() {
-        return streamObserver.isReady();
+        return channel != null && channel.isOpen() && channel.isActive();
     }
 
     @Override

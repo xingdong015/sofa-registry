@@ -338,7 +338,7 @@ public class PushProcessor {
               pushData.getDataCount(),
               pushData.getEncodeSize()));
       clientNodeService.pushWithCallback(
-          pushData.getPayload(), task.subscriber.getSourceAddress(), new PushClientCallback(task));
+          pushData.getPayload(), task.subscriber.getSourceAddress(),task.subscriber.getProtocolType(), new PushClientCallback(task));
       PUSH_CLIENT_ING_COUNTER.inc();
       LOGGER.info(
           "[pushing]{},{},{},{}",
