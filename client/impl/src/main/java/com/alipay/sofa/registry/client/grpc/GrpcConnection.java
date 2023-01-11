@@ -17,6 +17,7 @@
 package com.alipay.sofa.registry.client.grpc;
 
 import com.alipay.sofa.registry.client.remoting.ServerNode;
+import com.alipay.sofa.registry.core.grpc.auto.BiRequestStreamGrpc;
 import com.alipay.sofa.registry.core.grpc.auto.Payload;
 import com.alipay.sofa.registry.core.grpc.auto.RequestGrpc;
 import com.alipay.sofa.registry.core.utils.GrpcUtils;
@@ -38,6 +39,8 @@ public class GrpcConnection {
   public static final int RECONNECTING_DELAY = 5000;
   /** stub to send request. */
   protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
+  /** stub to send blocking request **/
+  private RequestGrpc.RequestBlockingStub requestBlockingStub;
 
   public GrpcConnection(ServerNode serverNode) {
     this.serverNode = serverNode;
@@ -54,16 +57,6 @@ public class GrpcConnection {
   public void setPayloadStreamObserver(StreamObserver<Payload> payloadStreamObserver) {
     this.payloadStreamObserver = payloadStreamObserver;
   }
-
-  /**
-   * Getter method for property <tt>grpcFutureServiceStub</tt>.
-   *
-   * @return property value of grpcFutureServiceStub
-   */
-  public RequestGrpc.RequestFutureStub getGrpcFutureServiceStub() {
-    return grpcFutureServiceStub;
-  }
-
   /**
    * Setter method for property <tt>grpcFutureServiceStub</tt>.
    *
@@ -71,15 +64,6 @@ public class GrpcConnection {
    */
   public void setGrpcFutureServiceStub(RequestGrpc.RequestFutureStub grpcFutureServiceStub) {
     this.grpcFutureServiceStub = grpcFutureServiceStub;
-  }
-
-  /**
-   * Getter method for property <tt>payloadStreamObserver</tt>.
-   *
-   * @return property value of payloadStreamObserver
-   */
-  public StreamObserver<Payload> getPayloadStreamObserver() {
-    return payloadStreamObserver;
   }
 
   public void setChannel(ManagedChannel managedChannel) {
@@ -95,23 +79,20 @@ public class GrpcConnection {
     Payload grpcRequest = GrpcUtils.convert(request);
     ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
     try {
-      return requestFuture.get(timeouts, TimeUnit.MILLISECONDS);
+      return requestFuture.get(1,TimeUnit.DAYS);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     }
   }
 
+  public <T> Payload requestSync(T request) {
+    Payload grpcRequest = GrpcUtils.convert(request);
+    return requestBlockingStub.request(grpcRequest);
+  }
+
   public boolean isFine() {
     return channel != null && !channel.isShutdown();
-  }
-
-  public ServerNode getServerNode() {
-    return serverNode;
-  }
-
-  public ManagedChannel getChannel() {
-    return channel;
   }
 
   public void sendResponse(Object response) {
@@ -135,5 +116,9 @@ public class GrpcConnection {
         // ignore.
       }
     }
+  }
+
+  public void setGrpcBlockingStub(RequestGrpc.RequestBlockingStub requestBlockingStub) {
+    this.requestBlockingStub = requestBlockingStub;
   }
 }

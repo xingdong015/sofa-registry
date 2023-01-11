@@ -47,7 +47,7 @@ import com.alipay.sofa.registry.server.session.strategy.SessionRegistryStrategy;
 import com.alipay.sofa.registry.server.session.wrapper.RegisterInvokeData;
 import com.alipay.sofa.registry.server.session.wrapper.WrapperInterceptorManager;
 import com.alipay.sofa.registry.server.shared.env.ServerEnv;
-import com.alipay.sofa.registry.server.shared.remoting.ProtocolManager;
+import com.alipay.sofa.registry.server.session.bootstrap.ProtocolManager;
 import com.alipay.sofa.registry.util.ConcurrentUtils;
 import com.alipay.sofa.registry.util.LoopRunnable;
 import com.alipay.sofa.registry.util.StringFormatter;
@@ -608,13 +608,11 @@ public class SessionRegistry implements Registry {
         });
     return result;
   }
-  // 自动断链 https://www.sofastack.tech/blog/sofa-rpc-connection-management-heartbeat-analysis/
+  // todo 自动断链 https://www.sofastack.tech/blog/sofa-rpc-connection-management-heartbeat-analysis/
   public void cleanClientConnect() {
 
-    Server sessionServer =
-        protocolManager
-            .getExchangeByPrototype(URL.ProtocolType.BOLT)
-            .getServer(sessionServerConfig.getServerPort());
+    Server sessionServer = protocolManager.getServer(URL.ProtocolType.BOLT);
+
     if (sessionServer == null) {
       LOGGER.warn("server not init when clean connect: {}", sessionServerConfig.getServerPort());
       return;

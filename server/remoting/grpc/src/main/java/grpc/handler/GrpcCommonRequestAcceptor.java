@@ -45,22 +45,20 @@ public class GrpcCommonRequestAcceptor extends RequestGrpc.RequestImplBase {
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
         // 1. 从 pb 协议中解析出实际的数据对象
         // 2. pb 中获取请求参数类型
-        String requestType = grpcRequest.getMetadata().getType();
-        if (ServerCheckRequest.class.getSimpleName().equals(requestType)) {
-            Payload serverCheckResponsePayload =
-                    GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get()));
+        String cmdType = grpcRequest.getMetadata().getType();
+        if (ServerCheckRequest.class.getSimpleName().equals(cmdType)) {
+            Payload serverCheckResponsePayload = GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get()));
             responseObserver.onNext(serverCheckResponsePayload);
             responseObserver.onCompleted();
             return;
         }
-        Object parseObj = GrpcUtils.parse(grpcRequest);
-        GrpcUserProcessorAdapter grpcUserProcessorAdapter =
-                requestHandlerRegistry.getByRequestType(requestType);
-        Connection connection      = connectionManager.getConnection(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get());
-        Object     response        = grpcUserProcessorAdapter.handleRequest(connection, parseObj);
-        Payload    payloadResponse = GrpcUtils.convert(response);
+        Object                   parseObj                 = GrpcUtils.parse(grpcRequest);
+        GrpcUserProcessorAdapter grpcUserProcessorAdapter = requestHandlerRegistry.getByRequestType(cmdType);
+        Connection               connection               = connectionManager.getConnection(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get());
+        Object                   response                 = grpcUserProcessorAdapter.handleRequest(connection, parseObj);
+        Payload                  payloadResponse          = GrpcUtils.convert(response);
+        System.out.println("来自客户端的普通请求,请求类型 " + cmdType);
         responseObserver.onNext(payloadResponse);
         responseObserver.onCompleted();
-
     }
 }

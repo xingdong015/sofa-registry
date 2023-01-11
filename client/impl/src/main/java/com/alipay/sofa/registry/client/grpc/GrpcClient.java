@@ -143,16 +143,6 @@ public class GrpcClient implements Client {
   }
 
   /**
-   * Create a stub using a channel.
-   *
-   * @param managedChannelTemp channel.
-   * @return if server check success,return a non-null stub.
-   */
-  private RequestGrpc.RequestFutureStub createNewChannelStub(ManagedChannel managedChannelTemp) {
-    return RequestGrpc.newFutureStub(managedChannelTemp);
-  }
-
-  /**
    * create a new channel with specific server address.
    *
    * @param serverIp serverIp.
@@ -265,17 +255,16 @@ public class GrpcClient implements Client {
     int port = serverNode.getPort();
     try {
       // todo 因为这块一个channel是根据ip和port绑定的、这个ip和port是从meta获取的。所以当连接不可用的
+      // todo grpc的负载均衡如何做
       // 时候、server端必须关闭 channel、而不是仅仅关闭 channel里面的connection
       // 参考 https://github.com/alibaba/nacos/pull/9788
       ManagedChannel managedChannel = createNewManagedChannel(host, port);
       // 是否需要初始化 managedChannel 连接服务端
       // https://stackoverflow.com/questions/43284217/getting-connection-state-for-grpc
       // 参考 nacos 的健康检测
-      RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
-      RequestGrpc.RequestBlockingStub requestBlockingStub =
-          RequestGrpc.newBlockingStub(managedChannel);
+      RequestGrpc.RequestBlockingStub requestBlockingStub = RequestGrpc.newBlockingStub(managedChannel);
 
-      if (newChannelStubTemp != null) {
+      if (requestBlockingStub != null) {
         ServerCheckResponse response = serverCheck(host, port, requestBlockingStub);
 
         if (response == null) {
@@ -283,18 +272,18 @@ public class GrpcClient implements Client {
           return null;
         }
 
-        BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub =
-            BiRequestStreamGrpc.newStub(newChannelStubTemp.getChannel());
+        RequestGrpc.RequestFutureStub requestFutureStub = RequestGrpc.newFutureStub(managedChannel);
+        BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(managedChannel);
         GrpcConnection grpcConn = new GrpcConnection(serverNode);
         grpcConn.setConnectionId(response.getConnectionId());
 
         // create stream request and bind connection event to this connection.
-        StreamObserver<Payload> payloadStreamObserver =
-            bindRequestStream(biRequestStreamStub, grpcConn);
+        StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
 
         // stream observer to send response to server
         grpcConn.setPayloadStreamObserver(payloadStreamObserver);
-        grpcConn.setGrpcFutureServiceStub(newChannelStubTemp);
+        grpcConn.setGrpcFutureServiceStub(requestFutureStub);
+        grpcConn.setGrpcBlockingStub(requestBlockingStub);
         grpcConn.setChannel(managedChannel);
         // send a  setup request.
         ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
@@ -373,7 +362,7 @@ public class GrpcClient implements Client {
 
   @Override
   public Object invokeSync(Object request) {
-    Payload payload = currentConnection.request(request, 100);
+    Payload payload = currentConnection.request(request,2000);
     return GrpcUtils.parse(payload);
   }
 

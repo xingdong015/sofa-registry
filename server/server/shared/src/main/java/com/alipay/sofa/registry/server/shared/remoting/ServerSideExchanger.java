@@ -20,7 +20,6 @@ import com.alipay.sofa.registry.common.model.store.URL;
 import com.alipay.sofa.registry.remoting.Channel;
 import com.alipay.sofa.registry.remoting.Client;
 import com.alipay.sofa.registry.remoting.Server;
-import com.alipay.sofa.registry.remoting.bolt.exchange.BoltExchange;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import com.alipay.sofa.registry.remoting.exchange.NodeExchanger;
 import com.alipay.sofa.registry.remoting.exchange.RequestChannelClosedException;
@@ -52,8 +51,7 @@ public abstract class ServerSideExchanger implements NodeExchanger {
     // todo 如果开启grpc协议的话、这块是否需要使用 grpc 推送 根据协议选择不同的 exchange
     URL.ProtocolType protocol = url.getProtocol();
     // todo 必须是 session推送给client的时候才使用 grpc 、data推送给session仍然使用session
-    Exchange         exchange = getExchange(protocol);
-    final Server server = exchange.getServer(getServerPort());
+    final Server server = getServer(protocol);
     if (server == null) {
       throw new RequestException("no server for " + url + "," + getServerPort(), request);
     }
@@ -79,8 +77,8 @@ public abstract class ServerSideExchanger implements NodeExchanger {
     }
   }
 
-  protected Exchange getExchange(URL.ProtocolType protocol) {
-    return boltExchange;
+  protected Server getServer(URL.ProtocolType protocol) {
+    return boltExchange.getServer(getServerPort());
   }
 
   private Channel chooseChannel(Server server) {

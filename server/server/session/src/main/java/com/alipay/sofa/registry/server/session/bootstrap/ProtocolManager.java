@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.registry.server.shared.remoting;
+package com.alipay.sofa.registry.server.session.bootstrap;
 
 import com.alipay.sofa.registry.common.model.store.URL;
+import com.alipay.sofa.registry.remoting.Server;
 import com.alipay.sofa.registry.remoting.exchange.Exchange;
 import grpc.exchange.GrpcExchange;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +27,24 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @date 2022/12/2
  */
 public class ProtocolManager {
-  @Autowired private Exchange boltExchange;
-  @Autowired private Exchange grpcExchange;
+    @Autowired
+    private Exchange            boltExchange;
+    @Autowired
+    private Exchange            grpcExchange;
+    @Autowired
+    private SessionServerConfig sessionServerConfig;
 
-  public Exchange getExchangeByPrototype(URL.ProtocolType protocolType) {
-    return protocolType == URL.ProtocolType.GRPC ? grpcExchange : boltExchange;
-  }
+    /**
+     *
+     * @param protocolType
+     * @return
+     */
+    public Server getServer(URL.ProtocolType protocolType) {
+        if (protocolType == URL.ProtocolType.GRPC) {
+            return grpcExchange.getServer(sessionServerConfig.getGrpcServerPort());
+        }
+        return boltExchange.getServer(sessionServerConfig.getServerPort());
+    }
+
+
 }
